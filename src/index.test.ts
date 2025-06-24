@@ -3,22 +3,16 @@ import app from "./index";
 
 describe("/api/v1/life-planning/simulation", () => {
 	it("正常なリクエストで年齢を計算する", async () => {
-		const req = new Request(
-			"http://localhost/api/v1/life-planning/simulation",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					birthDate: "1990-01-01",
-					startYear: 2020,
-					endYear: 2025,
-				}),
-			},
-		);
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "1990-01-01",
+				startYear: 2020,
+				endYear: 2025,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(200);
@@ -28,21 +22,15 @@ describe("/api/v1/life-planning/simulation", () => {
 	});
 
 	it("必須パラメータが不足している場合400エラーを返す", async () => {
-		const req = new Request(
-			"http://localhost/api/v1/life-planning/simulation",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					birthDate: "1990-01-01",
-					startYear: 2020,
-				}),
-			},
-		);
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "1990-01-01",
+				startYear: 2020,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
@@ -50,22 +38,16 @@ describe("/api/v1/life-planning/simulation", () => {
 	});
 
 	it("不正な生年月日フォーマットの場合400エラーを返す", async () => {
-		const req = new Request(
-			"http://localhost/api/v1/life-planning/simulation",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					birthDate: "invalid-date",
-					startYear: 2020,
-					endYear: 2025,
-				}),
-			},
-		);
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "invalid-date",
+				startYear: 2020,
+				endYear: 2025,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
@@ -75,22 +57,16 @@ describe("/api/v1/life-planning/simulation", () => {
 	});
 
 	it("開始年が終了年より大きい場合400エラーを返す", async () => {
-		const req = new Request(
-			"http://localhost/api/v1/life-planning/simulation",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					birthDate: "1990-01-01",
-					startYear: 2025,
-					endYear: 2020,
-				}),
-			},
-		);
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "1990-01-01",
+				startYear: 2025,
+				endYear: 2020,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
@@ -100,18 +76,12 @@ describe("/api/v1/life-planning/simulation", () => {
 	});
 
 	it("不正なJSONフォーマットの場合400エラーを返す", async () => {
-		const req = new Request(
-			"http://localhost/api/v1/life-planning/simulation",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: "invalid json",
-			},
-		);
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: "invalid json",
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
@@ -119,22 +89,16 @@ describe("/api/v1/life-planning/simulation", () => {
 	});
 
 	it("単一年のシミュレーション", async () => {
-		const req = new Request(
-			"http://localhost/api/v1/life-planning/simulation",
-			{
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-				},
-				body: JSON.stringify({
-					birthDate: "1985-06-15",
-					startYear: 2024,
-					endYear: 2024,
-				}),
-			},
-		);
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "1985-06-15",
+				startYear: 2024,
+				endYear: 2024,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(200);
@@ -145,11 +109,8 @@ describe("/api/v1/life-planning/simulation", () => {
 
 describe("/doc", () => {
 	it("OpenAPI JSON仕様を正しく提供する", async () => {
-		const req = new Request("http://localhost/doc", {
-			method: "GET",
-		});
+		const res = await app.request("/doc");
 
-		const res = await app.request(req);
 		const data = await res.json();
 
 		expect(res.status).toBe(200);
@@ -181,11 +142,8 @@ describe("/doc", () => {
 
 describe("/ui", () => {
 	it("Swagger UIを正しく提供する", async () => {
-		const req = new Request("http://localhost/ui", {
-			method: "GET",
-		});
+		const res = await app.request("/ui");
 
-		const res = await app.request(req);
 		const html = await res.text();
 
 		expect(res.status).toBe(200);
