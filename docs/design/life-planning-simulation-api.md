@@ -75,8 +75,9 @@
 
 | エラーメッセージ | 発生条件 |
 |---|---|
-| "Missing required parameters" | 必須パラメータが不足している |
-| "Invalid birth date format" | 生年月日の形式が不正 |
+| "Missing required parameter: [パラメータ名]" | 必須パラメータが不足している |
+| "Invalid date format for birthDate: expected YYYY-MM-DD format" | 生年月日の形式が不正 |
+| "Invalid type for [パラメータ名]: expected [期待する型], received [実際の型]" | パラメータの型が不正 |
 | "Start year must be less than or equal to end year" | 開始年が終了年より大きい |
 | "Invalid JSON format" | リクエストボディのJSONが不正 |
 
@@ -141,7 +142,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "error": "Missing required parameters"
+  "error": "Missing required parameter: endYear"
 }
 ```
 
@@ -160,7 +161,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "error": "Invalid birth date format"
+  "error": "Invalid date format for birthDate: expected YYYY-MM-DD format"
 }
 ```
 
@@ -180,6 +181,25 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 ```json
 {
   "error": "Start year must be less than or equal to end year"
+}
+```
+
+#### 不正な型
+
+```bash
+curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": "1990-01-01",
+    "startYear": "invalid",
+    "endYear": 2025
+  }'
+```
+
+**レスポンス:**
+```json
+{
+  "error": "Invalid type for startYear: expected number, received string"
 }
 ```
 
