@@ -159,7 +159,7 @@ app.openapi(lifePlanningRoute, async (c) => {
 		years.push({ year, age });
 	}
 
-	return c.json({ years });
+	return c.json({ years }, 200);
 });
 
 app.onError((err, c) => {
