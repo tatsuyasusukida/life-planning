@@ -1,6 +1,5 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
-import { HTTPException } from "hono/http-exception";
 
 const app = new OpenAPIHono({
 	defaultHook: (result, c) => {
@@ -42,9 +41,9 @@ app.doc("/doc", {
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
 const LifePlanningRequestSchema = z.object({
-	birthDate: z.string().date(),
-	startYear: z.number().int().min(1900).max(2100),
-	endYear: z.number().int().min(1900).max(2100),
+	birthDate: z.string().date().openapi({ example: "1990-01-01" }),
+	startYear: z.number().int().min(1900).max(2100).openapi({ example: 2024 }),
+	endYear: z.number().int().min(1900).max(2100).openapi({ example: 2050 }),
 });
 
 const LifePlanningResponseSchema = z.object({
