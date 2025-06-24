@@ -8,7 +8,10 @@
 		"cf-typegen": "wrangler types --env-interface CloudflareBindings"
 	},
 	"dependencies": {
-		"hono": "^4.8.2"
+		"@hono/swagger-ui": "^0.5.2",
+		"@hono/zod-openapi": "^0.19.8",
+		"hono": "^4.8.2",
+		"zod": "^3.25.67"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.0.4",

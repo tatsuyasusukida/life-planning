@@ -1,56 +1,129 @@
-import { Hono } from "hono";
+import { swaggerUI } from "@hono/swagger-ui";
+import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import { HTTPException } from "hono/http-exception";
 
-const app = new Hono();
+const app = new OpenAPIHono({
+	defaultHook: (result, c) => {
+		if (!result.success) {
+			const firstIssue = result.error.issues[0];
+
+			if (
+				firstIssue.code === "invalid_type" &&
+				firstIssue.received === "undefined"
+			) {
+				return c.json({ error: "Missing required parameters" }, 400);
+			}
+
+			if (
+				firstIssue.code === "invalid_string" &&
+				firstIssue.validation === "date"
+			) {
+				return c.json({ error: "Invalid birth date format" }, 400);
+			}
+
+			return c.json({ error: "Invalid request" }, 400);
+		}
+	},
+});
 
 app.get("/", (c) => {
 	return c.text("Hello Hono!");
 });
 
-interface LifePlanningRequest {
-	birthDate: string;
-	startYear: number;
-	endYear: number;
-}
+app.doc("/doc", {
+	openapi: "3.0.0",
+	info: {
+		version: "1.0.0",
+		title: "Life Planning API",
+		description: "API for life planning simulation",
+	},
+});
 
-interface LifePlanningResponse {
-	years: Array<{
-		year: number;
-		age: number;
-	}>;
-}
+app.get("/ui", swaggerUI({ url: "/doc" }));
 
-app.post("/api/v1/life-planning/simulation", async (c) => {
-	try {
-		const body: LifePlanningRequest = await c.req.json();
+const LifePlanningRequestSchema = z.object({
+	birthDate: z.string().date(),
+	startYear: z.number().int().min(1900).max(2100),
+	endYear: z.number().int().min(1900).max(2100),
+});
 
-		if (!body.birthDate || !body.startYear || !body.endYear) {
-			return c.json({ error: "Missing required parameters" }, 400);
-		}
+const LifePlanningResponseSchema = z.object({
+	years: z.array(
+		z.object({
+			year: z.number().int(),
+			age: z.number().int(),
+		}),
+	),
+});
 
-		const birthDate = new Date(body.birthDate);
-		if (Number.isNaN(birthDate.getTime())) {
-			return c.json({ error: "Invalid birth date format" }, 400);
-		}
+const ErrorResponseSchema = z.object({
+	error: z.string(),
+});
 
-		if (body.startYear > body.endYear) {
-			return c.json(
-				{ error: "Start year must be less than or equal to end year" },
-				400,
-			);
-		}
+const lifePlanningRoute = createRoute({
+	method: "post",
+	path: "/api/v1/life-planning/simulation",
+	request: {
+		body: {
+			content: {
+				"application/json": {
+					schema: LifePlanningRequestSchema,
+				},
+			},
+		},
+	},
+	responses: {
+		200: {
+			content: {
+				"application/json": {
+					schema: LifePlanningResponseSchema,
+				},
+			},
+			description: "Successful life planning simulation",
+		},
+		400: {
+			content: {
+				"application/json": {
+					schema: ErrorResponseSchema,
+				},
+			},
+			description: "Bad request",
+		},
+	},
+});
 
-		const years: Array<{ year: number; age: number }> = [];
+app.openapi(lifePlanningRoute, async (c) => {
+	const body = c.req.valid("json");
 
-		for (let year = body.startYear; year <= body.endYear; year++) {
-			const age = year - birthDate.getFullYear();
-			years.push({ year, age });
-		}
+	if (body.startYear > body.endYear) {
+		return c.json(
+			{ error: "Start year must be less than or equal to end year" },
+			400,
+		);
+	}
 
-		const response: LifePlanningResponse = { years };
-		return c.json(response);
-	} catch (_error) {
+	const birthDate = new Date(body.birthDate);
+	const years: Array<{ year: number; age: number }> = [];
+
+	for (let year = body.startYear; year <= body.endYear; year++) {
+		const age = year - birthDate.getFullYear();
+		years.push({ year, age });
+	}
+
+	return c.json({ years });
+});
+
+app.onError((err, c) => {
+	if (
+		err.name === "SyntaxError" ||
+		err.message.includes("Unexpected token") ||
+		err.message.includes("JSON") ||
+		err.message.includes("Malformed")
+	) {
 		return c.json({ error: "Invalid JSON format" }, 400);
 	}
+
+	return c.json({ error: "Internal Server Error" }, 500);
 });
 
 export default app;
