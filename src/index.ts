@@ -1,6 +1,11 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
 
+// 定数定義
+const MAX_ALLOWED_AGE = 150;
+const MIN_YEAR = 1900;
+const MAX_YEAR = 2100;
+
 const app = new OpenAPIHono({
 	defaultHook: (result, c) => {
 		if (!result.success) {
@@ -84,8 +89,18 @@ app.get("/ui", swaggerUI({ url: "/doc" }));
 
 const LifePlanningRequestSchema = z.object({
 	birthDate: z.string().date().openapi({ example: "1990-01-01" }),
-	startYear: z.number().int().min(1900).max(2100).openapi({ example: 2024 }),
-	endYear: z.number().int().min(1900).max(2100).openapi({ example: 2050 }),
+	startYear: z
+		.number()
+		.int()
+		.min(MIN_YEAR)
+		.max(MAX_YEAR)
+		.openapi({ example: 2024 }),
+	endYear: z
+		.number()
+		.int()
+		.min(MIN_YEAR)
+		.max(MAX_YEAR)
+		.openapi({ example: 2050 }),
 });
 
 const LifePlanningResponseSchema = z.object({
@@ -153,12 +168,13 @@ app.openapi(lifePlanningRoute, async (c) => {
 
 	const birthDate = new Date(body.birthDate);
 
-	// 年齢の妥当性チェック（150歳を上限とする）
-	const maxAge = 150;
+	// 年齢の妥当性チェック
 	const maxAgeInEndYear = body.endYear - birthDate.getFullYear();
-	if (maxAgeInEndYear > maxAge) {
+	if (maxAgeInEndYear > MAX_ALLOWED_AGE) {
 		return c.json(
-			{ error: `Age would exceed maximum allowed age of ${maxAge} years` },
+			{
+				error: `Age would exceed maximum allowed age of ${MAX_ALLOWED_AGE} years`,
+			},
 			400,
 		);
 	}

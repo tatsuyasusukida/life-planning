@@ -89,7 +89,9 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.error).toBe("Age would exceed maximum allowed age of 150 years");
+		expect(data.error).toBe(
+			"Age would exceed maximum allowed age of 150 years",
+		);
 	});
 
 	it("150歳ちょうどの場合は正常に処理する", async () => {
