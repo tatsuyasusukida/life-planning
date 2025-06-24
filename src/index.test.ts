@@ -75,6 +75,41 @@ describe("/api/v1/life-planning/simulation", () => {
 		);
 	});
 
+	it("150歳を超える場合400エラーを返す", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "1850-01-01",
+				startYear: 2024,
+				endYear: 2025,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(400);
+		expect(data.error).toBe("Age would exceed maximum allowed age of 150 years");
+	});
+
+	it("150歳ちょうどの場合は正常に処理する", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				birthDate: "1874-01-01",
+				startYear: 2024,
+				endYear: 2024,
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.years).toHaveLength(1);
+		expect(data.years[0]).toEqual({ year: 2024, age: 150 });
+	});
+
 	it("不正なJSONフォーマットの場合400エラーを返す", async () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
@@ -103,7 +138,7 @@ describe("/api/v1/life-planning/simulation", () => {
 
 		expect(res.status).toBe(200);
 		expect(data.years).toHaveLength(1);
-		expect(data.years[0]).toEqual({ year: 2024, age: 39 });
+		expect(data.years[0]).toEqual({ year: 2024, age: 38 });
 	});
 });
 
