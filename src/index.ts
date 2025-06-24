@@ -155,7 +155,19 @@ app.openapi(lifePlanningRoute, async (c) => {
 	const years: Array<{ year: number; age: number }> = [];
 
 	for (let year = body.startYear; year <= body.endYear; year++) {
-		const age = year - birthDate.getFullYear();
+		// 1月1日時点での満年齢を計算
+		const currentYearStart = new Date(year, 0, 1); // 年の1月1日
+		const age =
+			currentYearStart.getFullYear() -
+			birthDate.getFullYear() -
+			(currentYearStart <
+			new Date(
+				currentYearStart.getFullYear(),
+				birthDate.getMonth(),
+				birthDate.getDate(),
+			)
+				? 1
+				: 0);
 		years.push({ year, age });
 	}
 
