@@ -10,17 +10,41 @@ const app = new OpenAPIHono({
 				firstIssue.code === "invalid_type" &&
 				firstIssue.received === "undefined"
 			) {
-				return c.json({ error: "Missing required parameters" }, 400);
+				return c.json({ 
+					error: `Missing required parameter: ${firstIssue.path.join('.')}`
+				}, 400);
 			}
 
 			if (
 				firstIssue.code === "invalid_string" &&
 				firstIssue.validation === "date"
 			) {
-				return c.json({ error: "Invalid birth date format" }, 400);
+				return c.json({ 
+					error: `Invalid date format for ${firstIssue.path.join('.')}: expected YYYY-MM-DD format`
+				}, 400);
 			}
 
-			return c.json({ error: "Invalid request" }, 400);
+			if (firstIssue.code === "too_small") {
+				return c.json({ 
+					error: `${firstIssue.path.join('.')} must be at least ${firstIssue.minimum}`
+				}, 400);
+			}
+
+			if (firstIssue.code === "too_big") {
+				return c.json({ 
+					error: `${firstIssue.path.join('.')} must be at most ${firstIssue.maximum}`
+				}, 400);
+			}
+
+			if (firstIssue.code === "invalid_type") {
+				return c.json({ 
+					error: `Invalid type for ${firstIssue.path.join('.')}: expected ${firstIssue.expected}, received ${firstIssue.received}`
+				}, 400);
+			}
+
+			return c.json({ 
+				error: `Validation error for ${firstIssue.path.join('.')}: ${firstIssue.message}`
+			}, 400);
 		}
 	},
 });
