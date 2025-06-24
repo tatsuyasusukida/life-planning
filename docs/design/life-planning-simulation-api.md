@@ -79,6 +79,7 @@
 | "Invalid date format for birthDate: expected YYYY-MM-DD format" | 生年月日の形式が不正 |
 | "Invalid type for [パラメータ名]: expected [期待する型], received [実際の型]" | パラメータの型が不正 |
 | "Start year must be less than or equal to end year" | 開始年が終了年より大きい |
+| "Age would exceed maximum allowed age of 150 years" | 終了年時点で150歳を超える |
 | "Invalid JSON format" | リクエストボディのJSONが不正 |
 
 ## 実装詳細
@@ -95,9 +96,9 @@
 
 ### バリデーション
 
-1. **必須パラメータチェック**: すべてのパラメータが存在することを確認
-2. **日付フォーマットチェック**: `new Date()`で解析可能な形式かチェック
-3. **年の範囲チェック**: 開始年 ≤ 終了年であることを確認
+1. **Zodスキーマバリデーション**: リクエストボディの型、必須パラメータ、形式を自動検証
+2. **年の範囲チェック**: 開始年 ≤ 終了年であることを確認
+3. **年齢妥当性チェック**: 終了年時点で150歳を超えないことを確認
 4. **JSONフォーマットチェック**: リクエストボディが有効なJSONかチェック
 
 ## 使用例
@@ -200,6 +201,25 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 ```json
 {
   "error": "Invalid type for startYear: expected number, received string"
+}
+```
+
+#### 年齢上限超過
+
+```bash
+curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": "1850-01-01",
+    "startYear": 2024,
+    "endYear": 2025
+  }'
+```
+
+**レスポンス:**
+```json
+{
+  "error": "Age would exceed maximum allowed age of 150 years"
 }
 ```
 

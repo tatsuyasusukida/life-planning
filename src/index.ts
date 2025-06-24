@@ -152,6 +152,16 @@ app.openapi(lifePlanningRoute, async (c) => {
 	}
 
 	const birthDate = new Date(body.birthDate);
+
+	// 年齢の妥当性チェック（150歳を上限とする）
+	const maxAge = 150;
+	const maxAgeInEndYear = body.endYear - birthDate.getFullYear();
+	if (maxAgeInEndYear > maxAge) {
+		return c.json(
+			{ error: `Age would exceed maximum allowed age of ${maxAge} years` },
+			400,
+		);
+	}
 	const years: Array<{ year: number; age: number }> = [];
 
 	for (let year = body.startYear; year <= body.endYear; year++) {
