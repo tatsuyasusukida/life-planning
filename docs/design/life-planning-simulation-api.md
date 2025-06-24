@@ -125,6 +125,83 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   }'
 ```
 
+### 失敗ケースの例
+
+#### 必須パラメータ不足
+
+```bash
+curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": "1990-01-01",
+    "startYear": 2024
+  }'
+```
+
+**レスポンス:**
+```json
+{
+  "error": "Missing required parameters"
+}
+```
+
+#### 不正な日付フォーマット
+
+```bash
+curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": "1990/01/01",
+    "startYear": 2024,
+    "endYear": 2025
+  }'
+```
+
+**レスポンス:**
+```json
+{
+  "error": "Invalid birth date format"
+}
+```
+
+#### 開始年が終了年より大きい
+
+```bash
+curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": "1990-01-01",
+    "startYear": 2025,
+    "endYear": 2024
+  }'
+```
+
+**レスポンス:**
+```json
+{
+  "error": "Start year must be less than or equal to end year"
+}
+```
+
+#### 不正なJSONフォーマット
+
+```bash
+curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "birthDate": "1990-01-01",
+    "startYear": 2024,
+    "endYear": 2025,
+  }'
+```
+
+**レスポンス:**
+```json
+{
+  "error": "Invalid JSON format"
+}
+```
+
 ## 将来の拡張可能性
 
 - 誕生日を考慮した精密な年齢計算
