@@ -130,6 +130,14 @@ const lifePlanningRoute = createRoute({
 			},
 			description: "Bad request",
 		},
+		500: {
+			content: {
+				"application/json": {
+					schema: ErrorResponseSchema,
+				},
+			},
+			description: "Internal server error",
+		},
 	},
 });
 
