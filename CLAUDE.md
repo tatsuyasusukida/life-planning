@@ -49,5 +49,8 @@
 - 生成された`CloudflareBindings`型を使用: `new Hono<{ Bindings: CloudflareBindings }>()`
 
 ## コミットガイドライン
-
 - Git コミットメッセージは日本語で書いてください。
+
+## 開発メモ
+- `pnpm dev` はユーザー側で実行するので Claude Code では起動しないでください
+- ファイル編集後は `pnpm lint` を実行し、エラーがあれば修正してください
