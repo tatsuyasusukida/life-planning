@@ -216,18 +216,15 @@ app.openapi(lifePlanningRoute, async (c) => {
 	}
 
 	// 省略された年度の給与情報を前年度のデータで補完
-	const sortedYears = Array.from(salaryInfoMap.keys()).sort((a, b) => a - b);
+	let lastValidSalary = 0;
 	for (let year = body.開始年; year <= body.終了年; year++) {
-		if (!salaryInfoMap.has(year)) {
-			// 現在の年度より前で最も近い年度の給与情報を使用
-			const previousYears = sortedYears.filter((y) => y < year);
-			if (previousYears.length > 0) {
-				const nearestPreviousYear = Math.max(...previousYears);
-				const previousSalary = salaryInfoMap.get(nearestPreviousYear);
-				if (previousSalary !== undefined) {
-					salaryInfoMap.set(year, previousSalary);
-				}
+		if (salaryInfoMap.has(year)) {
+			const salary = salaryInfoMap.get(year);
+			if (salary !== undefined) {
+				lastValidSalary = salary;
 			}
+		} else if (lastValidSalary > 0) {
+			salaryInfoMap.set(year, lastValidSalary);
 		}
 	}
 
