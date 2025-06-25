@@ -34,7 +34,7 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.エラー).toBe("Missing required parameter: 終了年");
+		expect(data.エラー).toBe("必須パラメータが不足しています: 終了年");
 	});
 
 	it("不正な生年月日フォーマットの場合400エラーを返す", async () => {
@@ -52,7 +52,7 @@ describe("/api/v1/life-planning/simulation", () => {
 
 		expect(res.status).toBe(400);
 		expect(data.エラー).toBe(
-			"Invalid date format for 生年月日: expected YYYY-MM-DD format",
+			"生年月日の日付形式が正しくありません。YYYY-MM-DD形式で入力してください",
 		);
 	});
 
@@ -70,9 +70,7 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.エラー).toBe(
-			"Start year must be less than or equal to end year",
-		);
+		expect(data.エラー).toBe("開始年は終了年以下である必要があります");
 	});
 
 	it("150歳を超える場合400エラーを返す", async () => {
@@ -89,9 +87,7 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.エラー).toBe(
-			"Age would exceed maximum allowed age of 150 years",
-		);
+		expect(data.エラー).toBe("年齢が上限の150歳を超えています");
 	});
 
 	it("150歳ちょうどの場合は正常に処理する", async () => {
@@ -122,7 +118,7 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.エラー).toBe("Invalid JSON format");
+		expect(data.エラー).toBe("JSONフォーマットが正しくありません");
 	});
 
 	it("単一年のシミュレーション", async () => {

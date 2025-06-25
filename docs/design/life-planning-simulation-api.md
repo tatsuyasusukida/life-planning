@@ -75,12 +75,12 @@
 
 | エラーメッセージ | 発生条件 |
 |---|---|
-| "Missing required parameter: [パラメータ名]" | 必須パラメータが不足している |
-| "Invalid date format for 生年月日: expected YYYY-MM-DD format" | 生年月日の形式が不正 |
-| "Invalid type for [パラメータ名]: expected [期待する型], received [実際の型]" | パラメータの型が不正 |
-| "Start year must be less than or equal to end year" | 開始年が終了年より大きい |
-| "Age would exceed maximum allowed age of 150 years" | 終了年時点で150歳を超える |
-| "Invalid JSON format" | リクエストボディのJSONが不正 |
+| "必須パラメータが不足しています: [パラメータ名]" | 必須パラメータが不足している |
+| "[パラメータ名]の日付形式が正しくありません。YYYY-MM-DD形式で入力してください" | 生年月日の形式が不正 |
+| "[パラメータ名]の型が正しくありません。[期待する型]型である必要がありますが、[実際の型]型が入力されました" | パラメータの型が不正 |
+| "開始年は終了年以下である必要があります" | 開始年が終了年より大きい |
+| "年齢が上限の150歳を超えています" | 終了年時点で150歳を超える |
+| "JSONフォーマットが正しくありません" | リクエストボディのJSONが不正 |
 
 ## 実装詳細
 
@@ -143,7 +143,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "エラー": "Missing required parameter: 終了年"
+  "エラー": "必須パラメータが不足しています: 終了年"
 }
 ```
 
@@ -162,7 +162,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "エラー": "Invalid date format for 生年月日: expected YYYY-MM-DD format"
+  "エラー": "生年月日の日付形式が正しくありません。YYYY-MM-DD形式で入力してください"
 }
 ```
 
@@ -181,7 +181,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "エラー": "Start year must be less than or equal to end year"
+  "エラー": "開始年は終了年以下である必要があります"
 }
 ```
 
@@ -200,7 +200,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "エラー": "Invalid type for 開始年: expected number, received string"
+  "エラー": "開始年の型が正しくありません。number型である必要がありますが、string型が入力されました"
 }
 ```
 
@@ -219,7 +219,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "エラー": "Age would exceed maximum allowed age of 150 years"
+  "エラー": "年齢が上限の150歳を超えています"
 }
 ```
 
@@ -238,7 +238,7 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 **レスポンス:**
 ```json
 {
-  "エラー": "Invalid JSON format"
+  "エラー": "JSONフォーマットが正しくありません"
 }
 ```
 

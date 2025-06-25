@@ -17,7 +17,7 @@ const app = new OpenAPIHono({
 			) {
 				return c.json(
 					{
-						エラー: `Missing required parameter: ${firstIssue.path.join(".")}`,
+						エラー: `必須パラメータが不足しています: ${firstIssue.path.join(".")}`,
 					},
 					400,
 				);
@@ -29,7 +29,7 @@ const app = new OpenAPIHono({
 			) {
 				return c.json(
 					{
-						エラー: `Invalid date format for ${firstIssue.path.join(".")}: expected YYYY-MM-DD format`,
+						エラー: `${firstIssue.path.join(".")}の日付形式が正しくありません。YYYY-MM-DD形式で入力してください`,
 					},
 					400,
 				);
@@ -38,7 +38,7 @@ const app = new OpenAPIHono({
 			if (firstIssue.code === "too_small") {
 				return c.json(
 					{
-						エラー: `${firstIssue.path.join(".")} must be at least ${firstIssue.minimum}`,
+						エラー: `${firstIssue.path.join(".")}は${firstIssue.minimum}以上である必要があります`,
 					},
 					400,
 				);
@@ -47,7 +47,7 @@ const app = new OpenAPIHono({
 			if (firstIssue.code === "too_big") {
 				return c.json(
 					{
-						エラー: `${firstIssue.path.join(".")} must be at most ${firstIssue.maximum}`,
+						エラー: `${firstIssue.path.join(".")}は${firstIssue.maximum}以下である必要があります`,
 					},
 					400,
 				);
@@ -56,7 +56,7 @@ const app = new OpenAPIHono({
 			if (firstIssue.code === "invalid_type") {
 				return c.json(
 					{
-						エラー: `Invalid type for ${firstIssue.path.join(".")}: expected ${firstIssue.expected}, received ${firstIssue.received}`,
+						エラー: `${firstIssue.path.join(".")}の型が正しくありません。${firstIssue.expected}型である必要がありますが、${firstIssue.received}型が入力されました`,
 					},
 					400,
 				);
@@ -64,7 +64,7 @@ const app = new OpenAPIHono({
 
 			return c.json(
 				{
-					エラー: `Validation error for ${firstIssue.path.join(".")}: ${firstIssue.message}`,
+					エラー: `${firstIssue.path.join(".")}のバリデーションエラー: ${firstIssue.message}`,
 				},
 				400,
 			);
@@ -160,10 +160,7 @@ app.openapi(lifePlanningRoute, async (c) => {
 	const body = c.req.valid("json");
 
 	if (body.開始年 > body.終了年) {
-		return c.json(
-			{ エラー: "Start year must be less than or equal to end year" },
-			400,
-		);
+		return c.json({ エラー: "開始年は終了年以下である必要があります" }, 400);
 	}
 
 	const birthDate = new Date(body.生年月日);
@@ -173,7 +170,7 @@ app.openapi(lifePlanningRoute, async (c) => {
 	if (maxAgeInEndYear > MAX_ALLOWED_AGE) {
 		return c.json(
 			{
-				エラー: `Age would exceed maximum allowed age of ${MAX_ALLOWED_AGE} years`,
+				エラー: `年齢が上限の${MAX_ALLOWED_AGE}歳を超えています`,
 			},
 			400,
 		);
@@ -207,10 +204,10 @@ app.onError((err, c) => {
 		err.message.includes("JSON") ||
 		err.message.includes("Malformed")
 	) {
-		return c.json({ エラー: "Invalid JSON format" }, 400);
+		return c.json({ エラー: "JSONフォーマットが正しくありません" }, 400);
 	}
 
-	return c.json({ エラー: "Internal Server Error" }, 500);
+	return c.json({ エラー: "内部サーバーエラーが発生しました" }, 500);
 });
 
 export default app;
