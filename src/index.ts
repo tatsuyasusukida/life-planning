@@ -6,6 +6,11 @@ const MAX_ALLOWED_AGE = 150;
 const MIN_YEAR = 1900;
 const MAX_YEAR = 2100;
 
+/**
+ * 給与所得控除額を計算する
+ * @param income 収入金額
+ * @returns 給与所得控除額
+ */
 function calculateSalaryDeduction(income: number): number {
 	if (income <= 1625000) {
 		return 550000;
@@ -25,7 +30,13 @@ function calculateSalaryDeduction(income: number): number {
 	return 1950000;
 }
 
-function fillMissingSalaryInfo(
+/**
+ * 省略された年度の給与情報を前年度のデータで補完する
+ * @param salaryInfoMap 年度別給与情報
+ * @param startYear 開始年
+ * @param endYear 終了年
+ */
+export function fillMissingSalaryInfo(
 	salaryInfoMap: Map<number, number>,
 	startYear: number,
 	endYear: number,

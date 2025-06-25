@@ -1,24 +1,5 @@
 import { describe, expect, it } from "vitest";
-import app from "./index";
-
-// テスト用のヘルパー関数（実際の実装では別ファイルに分けることを推奨）
-function fillMissingSalaryInfo(
-	salaryInfoMap: Map<number, number>,
-	startYear: number,
-	endYear: number,
-): void {
-	let lastValidSalary = 0;
-	for (let year = startYear; year <= endYear; year++) {
-		if (salaryInfoMap.has(year)) {
-			const salary = salaryInfoMap.get(year);
-			if (salary !== undefined) {
-				lastValidSalary = salary;
-			}
-		} else if (lastValidSalary > 0) {
-			salaryInfoMap.set(year, lastValidSalary);
-		}
-	}
-}
+import app, { fillMissingSalaryInfo } from "./index";
 
 describe("fillMissingSalaryInfo", () => {
 	it("省略された年度を前年度のデータで補完する", () => {
