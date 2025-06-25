@@ -25,6 +25,24 @@ function calculateSalaryDeduction(income: number): number {
 	return 1950000;
 }
 
+function fillMissingSalaryInfo(
+	salaryInfoMap: Map<number, number>,
+	startYear: number,
+	endYear: number,
+): void {
+	let lastValidSalary = 0;
+	for (let year = startYear; year <= endYear; year++) {
+		if (salaryInfoMap.has(year)) {
+			const salary = salaryInfoMap.get(year);
+			if (salary !== undefined) {
+				lastValidSalary = salary;
+			}
+		} else if (lastValidSalary > 0) {
+			salaryInfoMap.set(year, lastValidSalary);
+		}
+	}
+}
+
 const app = new OpenAPIHono({
 	defaultHook: (result, c) => {
 		if (!result.success) {
@@ -216,17 +234,7 @@ app.openapi(lifePlanningRoute, async (c) => {
 	}
 
 	// 省略された年度の給与情報を前年度のデータで補完
-	let lastValidSalary = 0;
-	for (let year = body.開始年; year <= body.終了年; year++) {
-		if (salaryInfoMap.has(year)) {
-			const salary = salaryInfoMap.get(year);
-			if (salary !== undefined) {
-				lastValidSalary = salary;
-			}
-		} else if (lastValidSalary > 0) {
-			salaryInfoMap.set(year, lastValidSalary);
-		}
-	}
+	fillMissingSalaryInfo(salaryInfoMap, body.開始年, body.終了年);
 
 	const years: Array<{
 		西暦年: number;

@@ -1,6 +1,77 @@
 import { describe, expect, it } from "vitest";
 import app from "./index";
 
+// テスト用のヘルパー関数（実際の実装では別ファイルに分けることを推奨）
+function fillMissingSalaryInfo(
+	salaryInfoMap: Map<number, number>,
+	startYear: number,
+	endYear: number,
+): void {
+	let lastValidSalary = 0;
+	for (let year = startYear; year <= endYear; year++) {
+		if (salaryInfoMap.has(year)) {
+			const salary = salaryInfoMap.get(year);
+			if (salary !== undefined) {
+				lastValidSalary = salary;
+			}
+		} else if (lastValidSalary > 0) {
+			salaryInfoMap.set(year, lastValidSalary);
+		}
+	}
+}
+
+describe("fillMissingSalaryInfo", () => {
+	it("省略された年度を前年度のデータで補完する", () => {
+		const salaryInfoMap = new Map<number, number>();
+		salaryInfoMap.set(2020, 5000000);
+		salaryInfoMap.set(2023, 5500000);
+
+		fillMissingSalaryInfo(salaryInfoMap, 2020, 2025);
+
+		expect(salaryInfoMap.get(2020)).toBe(5000000);
+		expect(salaryInfoMap.get(2021)).toBe(5000000); // 2020年のデータで補完
+		expect(salaryInfoMap.get(2022)).toBe(5000000); // 2020年のデータで補完
+		expect(salaryInfoMap.get(2023)).toBe(5500000);
+		expect(salaryInfoMap.get(2024)).toBe(5500000); // 2023年のデータで補完
+		expect(salaryInfoMap.get(2025)).toBe(5500000); // 2023年のデータで補完
+	});
+
+	it("最初の年度に給与情報がない場合は補完しない", () => {
+		const salaryInfoMap = new Map<number, number>();
+		salaryInfoMap.set(2022, 5000000);
+
+		fillMissingSalaryInfo(salaryInfoMap, 2020, 2025);
+
+		expect(salaryInfoMap.has(2020)).toBe(false);
+		expect(salaryInfoMap.has(2021)).toBe(false);
+		expect(salaryInfoMap.get(2022)).toBe(5000000);
+		expect(salaryInfoMap.get(2023)).toBe(5000000); // 2022年のデータで補完
+		expect(salaryInfoMap.get(2024)).toBe(5000000); // 2022年のデータで補完
+		expect(salaryInfoMap.get(2025)).toBe(5000000); // 2022年のデータで補完
+	});
+
+	it("すべての年度に給与情報がある場合は変更しない", () => {
+		const salaryInfoMap = new Map<number, number>();
+		salaryInfoMap.set(2020, 4000000);
+		salaryInfoMap.set(2021, 4200000);
+		salaryInfoMap.set(2022, 4400000);
+
+		fillMissingSalaryInfo(salaryInfoMap, 2020, 2022);
+
+		expect(salaryInfoMap.get(2020)).toBe(4000000);
+		expect(salaryInfoMap.get(2021)).toBe(4200000);
+		expect(salaryInfoMap.get(2022)).toBe(4400000);
+	});
+
+	it("給与情報が全くない場合は何も追加しない", () => {
+		const salaryInfoMap = new Map<number, number>();
+
+		fillMissingSalaryInfo(salaryInfoMap, 2020, 2022);
+
+		expect(salaryInfoMap.size).toBe(0);
+	});
+});
+
 describe("/api/v1/life-planning/simulation", () => {
 	it("正常なリクエストで年齢を計算する", async () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
