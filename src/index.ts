@@ -6,6 +6,54 @@ const MAX_ALLOWED_AGE = 150;
 const MIN_YEAR = 1900;
 const MAX_YEAR = 2100;
 
+/**
+ * 給与所得控除額を計算する
+ * @param income 収入金額
+ * @returns 給与所得控除額
+ */
+function calculateSalaryDeduction(income: number): number {
+	if (income <= 1625000) {
+		return 550000;
+	}
+	if (income <= 1800000) {
+		return Math.floor(income * 0.4 - 100000);
+	}
+	if (income <= 3600000) {
+		return Math.floor(income * 0.3 + 80000);
+	}
+	if (income <= 6600000) {
+		return Math.floor(income * 0.2 + 440000);
+	}
+	if (income <= 8500000) {
+		return Math.floor(income * 0.1 + 1100000);
+	}
+	return 1950000;
+}
+
+/**
+ * 省略された年度の給与情報を前年度のデータで補完する
+ * @param salaryInfoMap 年度別給与情報
+ * @param startYear 開始年
+ * @param endYear 終了年
+ */
+export function fillMissingSalaryInfo(
+	salaryInfoMap: Map<number, number>,
+	startYear: number,
+	endYear: number,
+): void {
+	let lastValidSalary = 0;
+	for (let year = startYear; year <= endYear; year++) {
+		if (salaryInfoMap.has(year)) {
+			const salary = salaryInfoMap.get(year);
+			if (salary !== undefined) {
+				lastValidSalary = salary;
+			}
+		} else if (lastValidSalary > 0) {
+			salaryInfoMap.set(year, lastValidSalary);
+		}
+	}
+}
+
 const app = new OpenAPIHono({
 	defaultHook: (result, c) => {
 		if (!result.success) {
@@ -101,6 +149,19 @@ const LifePlanningRequestSchema = z.object({
 		.min(MIN_YEAR)
 		.max(MAX_YEAR)
 		.openapi({ example: 2050 }),
+	年度別給与情報: z
+		.array(
+			z.object({
+				年度: z
+					.number()
+					.int()
+					.min(MIN_YEAR)
+					.max(MAX_YEAR)
+					.openapi({ example: 2024 }),
+				収入金額: z.number().min(0).openapi({ example: 5000000 }),
+			}),
+		)
+		.openapi({ example: [{ 年度: 2024, 収入金額: 5000000 }] }),
 });
 
 const LifePlanningResponseSchema = z.object({
@@ -108,6 +169,9 @@ const LifePlanningResponseSchema = z.object({
 		z.object({
 			西暦年: z.number().int(),
 			年齢: z.number().int(),
+			収入金額: z.number(),
+			給与所得控除額: z.number(),
+			給与所得控除後の金額: z.number(),
 		}),
 	),
 });
@@ -175,7 +239,21 @@ app.openapi(lifePlanningRoute, async (c) => {
 			400,
 		);
 	}
-	const years: Array<{ 西暦年: number; 年齢: number }> = [];
+	const salaryInfoMap = new Map<number, number>();
+	for (const info of body.年度別給与情報) {
+		salaryInfoMap.set(info.年度, info.収入金額);
+	}
+
+	// 省略された年度の給与情報を前年度のデータで補完
+	fillMissingSalaryInfo(salaryInfoMap, body.開始年, body.終了年);
+
+	const years: Array<{
+		西暦年: number;
+		年齢: number;
+		収入金額: number;
+		給与所得控除額: number;
+		給与所得控除後の金額: number;
+	}> = [];
 
 	for (let year = body.開始年; year <= body.終了年; year++) {
 		// 1月1日時点での満年齢を計算
@@ -191,7 +269,20 @@ app.openapi(lifePlanningRoute, async (c) => {
 			)
 				? 1
 				: 0);
-		years.push({ 西暦年: year, 年齢: age });
+
+		const income = salaryInfoMap.get(year) ?? 0;
+		const deduction = Math.min(calculateSalaryDeduction(income), income);
+		const afterDeduction = income - deduction;
+
+		const yearData = {
+			西暦年: year,
+			年齢: age,
+			収入金額: income,
+			給与所得控除額: deduction,
+			給与所得控除後の金額: afterDeduction,
+		};
+
+		years.push(yearData);
 	}
 
 	return c.json({ 年度一覧: years }, 200);
