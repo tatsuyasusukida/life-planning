@@ -14,9 +14,9 @@
 
 ```json
 {
-  "birthDate": "1990-01-01",
-  "startYear": 2020,
-  "endYear": 2025
+  "生年月日": "1990-01-01",
+  "開始年": 2020,
+  "終了年": 2025
 }
 ```
 
@@ -24,9 +24,9 @@
 
 | パラメータ | 型 | 必須 | 説明 |
 |---|---|---|---|
-| birthDate | string | ✓ | 生年月日（ISO 8601形式: YYYY-MM-DD） |
-| startYear | number | ✓ | シミュレーション開始年（西暦） |
-| endYear | number | ✓ | シミュレーション終了年（西暦） |
+| 生年月日 | string | ✓ | 生年月日（ISO 8601形式: YYYY-MM-DD） |
+| 開始年 | number | ✓ | シミュレーション開始年（西暦） |
+| 終了年 | number | ✓ | シミュレーション終了年（西暦） |
 
 #### レスポンス
 
@@ -34,30 +34,30 @@
 
 ```json
 {
-  "years": [
+  "年度一覧": [
     {
-      "year": 2020,
-      "age": 30
+      "西暦年": 2020,
+      "年齢": 30
     },
     {
-      "year": 2021,
-      "age": 31
+      "西暦年": 2021,
+      "年齢": 31
     },
     {
-      "year": 2022,
-      "age": 32
+      "西暦年": 2022,
+      "年齢": 32
     },
     {
-      "year": 2023,
-      "age": 33
+      "西暦年": 2023,
+      "年齢": 33
     },
     {
-      "year": 2024,
-      "age": 34
+      "西暦年": 2024,
+      "年齢": 34
     },
     {
-      "year": 2025,
-      "age": 35
+      "西暦年": 2025,
+      "年齢": 35
     }
   ]
 }
@@ -67,7 +67,7 @@
 
 ```json
 {
-  "error": "エラーメッセージ"
+  "エラー": "エラーメッセージ"
 }
 ```
 
@@ -76,7 +76,7 @@
 | エラーメッセージ | 発生条件 |
 |---|---|
 | "Missing required parameter: [パラメータ名]" | 必須パラメータが不足している |
-| "Invalid date format for birthDate: expected YYYY-MM-DD format" | 生年月日の形式が不正 |
+| "Invalid date format for 生年月日: expected YYYY-MM-DD format" | 生年月日の形式が不正 |
 | "Invalid type for [パラメータ名]: expected [期待する型], received [実際の型]" | パラメータの型が不正 |
 | "Start year must be less than or equal to end year" | 開始年が終了年より大きい |
 | "Age would exceed maximum allowed age of 150 years" | 終了年時点で150歳を超える |
@@ -109,9 +109,9 @@
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1990-01-01",
-    "startYear": 2020,
-    "endYear": 2025
+    "生年月日": "1990-01-01",
+    "開始年": 2020,
+    "終了年": 2025
   }'
 ```
 
@@ -121,9 +121,9 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1985-06-15",
-    "startYear": 2024,
-    "endYear": 2024
+    "生年月日": "1985-06-15",
+    "開始年": 2024,
+    "終了年": 2024
   }'
 ```
 
@@ -135,15 +135,15 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1990-01-01",
-    "startYear": 2024
+    "生年月日": "1990-01-01",
+    "開始年": 2024
   }'
 ```
 
 **レスポンス:**
 ```json
 {
-  "error": "Missing required parameter: endYear"
+  "エラー": "Missing required parameter: 終了年"
 }
 ```
 
@@ -153,16 +153,16 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1990/01/01",
-    "startYear": 2024,
-    "endYear": 2025
+    "生年月日": "1990/01/01",
+    "開始年": 2024,
+    "終了年": 2025
   }'
 ```
 
 **レスポンス:**
 ```json
 {
-  "error": "Invalid date format for birthDate: expected YYYY-MM-DD format"
+  "エラー": "Invalid date format for 生年月日: expected YYYY-MM-DD format"
 }
 ```
 
@@ -172,16 +172,16 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1990-01-01",
-    "startYear": 2025,
-    "endYear": 2024
+    "生年月日": "1990-01-01",
+    "開始年": 2025,
+    "終了年": 2024
   }'
 ```
 
 **レスポンス:**
 ```json
 {
-  "error": "Start year must be less than or equal to end year"
+  "エラー": "Start year must be less than or equal to end year"
 }
 ```
 
@@ -191,16 +191,16 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1990-01-01",
-    "startYear": "invalid",
-    "endYear": 2025
+    "生年月日": "1990-01-01",
+    "開始年": "invalid",
+    "終了年": 2025
   }'
 ```
 
 **レスポンス:**
 ```json
 {
-  "error": "Invalid type for startYear: expected number, received string"
+  "エラー": "Invalid type for 開始年: expected number, received string"
 }
 ```
 
@@ -210,16 +210,16 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1850-01-01",
-    "startYear": 2024,
-    "endYear": 2025
+    "生年月日": "1850-01-01",
+    "開始年": 2024,
+    "終了年": 2025
   }'
 ```
 
 **レスポンス:**
 ```json
 {
-  "error": "Age would exceed maximum allowed age of 150 years"
+  "エラー": "Age would exceed maximum allowed age of 150 years"
 }
 ```
 
@@ -229,16 +229,16 @@ curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
 curl -X POST http://localhost:8787/api/v1/life-planning/simulation \
   -H "Content-Type: application/json" \
   -d '{
-    "birthDate": "1990-01-01",
-    "startYear": 2024,
-    "endYear": 2025,
+    "生年月日": "1990-01-01",
+    "開始年": 2024,
+    "終了年": 2025,
   }'
 ```
 
 **レスポンス:**
 ```json
 {
-  "error": "Invalid JSON format"
+  "エラー": "Invalid JSON format"
 }
 ```
 

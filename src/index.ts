@@ -17,7 +17,7 @@ const app = new OpenAPIHono({
 			) {
 				return c.json(
 					{
-						error: `Missing required parameter: ${firstIssue.path.join(".")}`,
+						エラー: `Missing required parameter: ${firstIssue.path.join(".")}`,
 					},
 					400,
 				);
@@ -29,7 +29,7 @@ const app = new OpenAPIHono({
 			) {
 				return c.json(
 					{
-						error: `Invalid date format for ${firstIssue.path.join(".")}: expected YYYY-MM-DD format`,
+						エラー: `Invalid date format for ${firstIssue.path.join(".")}: expected YYYY-MM-DD format`,
 					},
 					400,
 				);
@@ -38,7 +38,7 @@ const app = new OpenAPIHono({
 			if (firstIssue.code === "too_small") {
 				return c.json(
 					{
-						error: `${firstIssue.path.join(".")} must be at least ${firstIssue.minimum}`,
+						エラー: `${firstIssue.path.join(".")} must be at least ${firstIssue.minimum}`,
 					},
 					400,
 				);
@@ -47,7 +47,7 @@ const app = new OpenAPIHono({
 			if (firstIssue.code === "too_big") {
 				return c.json(
 					{
-						error: `${firstIssue.path.join(".")} must be at most ${firstIssue.maximum}`,
+						エラー: `${firstIssue.path.join(".")} must be at most ${firstIssue.maximum}`,
 					},
 					400,
 				);
@@ -56,7 +56,7 @@ const app = new OpenAPIHono({
 			if (firstIssue.code === "invalid_type") {
 				return c.json(
 					{
-						error: `Invalid type for ${firstIssue.path.join(".")}: expected ${firstIssue.expected}, received ${firstIssue.received}`,
+						エラー: `Invalid type for ${firstIssue.path.join(".")}: expected ${firstIssue.expected}, received ${firstIssue.received}`,
 					},
 					400,
 				);
@@ -64,7 +64,7 @@ const app = new OpenAPIHono({
 
 			return c.json(
 				{
-					error: `Validation error for ${firstIssue.path.join(".")}: ${firstIssue.message}`,
+					エラー: `Validation error for ${firstIssue.path.join(".")}: ${firstIssue.message}`,
 				},
 				400,
 			);
@@ -88,14 +88,14 @@ app.doc("/doc", {
 app.get("/ui", swaggerUI({ url: "/doc" }));
 
 const LifePlanningRequestSchema = z.object({
-	birthDate: z.string().date().openapi({ example: "1990-01-01" }),
-	startYear: z
+	生年月日: z.string().date().openapi({ example: "1990-01-01" }),
+	開始年: z
 		.number()
 		.int()
 		.min(MIN_YEAR)
 		.max(MAX_YEAR)
 		.openapi({ example: 2024 }),
-	endYear: z
+	終了年: z
 		.number()
 		.int()
 		.min(MIN_YEAR)
@@ -104,16 +104,16 @@ const LifePlanningRequestSchema = z.object({
 });
 
 const LifePlanningResponseSchema = z.object({
-	years: z.array(
+	年度一覧: z.array(
 		z.object({
-			year: z.number().int(),
-			age: z.number().int(),
+			西暦年: z.number().int(),
+			年齢: z.number().int(),
 		}),
 	),
 });
 
 const ErrorResponseSchema = z.object({
-	error: z.string(),
+	エラー: z.string(),
 });
 
 const lifePlanningRoute = createRoute({
@@ -159,28 +159,28 @@ const lifePlanningRoute = createRoute({
 app.openapi(lifePlanningRoute, async (c) => {
 	const body = c.req.valid("json");
 
-	if (body.startYear > body.endYear) {
+	if (body.開始年 > body.終了年) {
 		return c.json(
-			{ error: "Start year must be less than or equal to end year" },
+			{ エラー: "Start year must be less than or equal to end year" },
 			400,
 		);
 	}
 
-	const birthDate = new Date(body.birthDate);
+	const birthDate = new Date(body.生年月日);
 
 	// 年齢の妥当性チェック
-	const maxAgeInEndYear = body.endYear - birthDate.getFullYear();
+	const maxAgeInEndYear = body.終了年 - birthDate.getFullYear();
 	if (maxAgeInEndYear > MAX_ALLOWED_AGE) {
 		return c.json(
 			{
-				error: `Age would exceed maximum allowed age of ${MAX_ALLOWED_AGE} years`,
+				エラー: `Age would exceed maximum allowed age of ${MAX_ALLOWED_AGE} years`,
 			},
 			400,
 		);
 	}
-	const years: Array<{ year: number; age: number }> = [];
+	const years: Array<{ 西暦年: number; 年齢: number }> = [];
 
-	for (let year = body.startYear; year <= body.endYear; year++) {
+	for (let year = body.開始年; year <= body.終了年; year++) {
 		// 1月1日時点での満年齢を計算
 		const currentYearStart = new Date(year, 0, 1); // 年の1月1日
 		const age =
@@ -194,10 +194,10 @@ app.openapi(lifePlanningRoute, async (c) => {
 			)
 				? 1
 				: 0);
-		years.push({ year, age });
+		years.push({ 西暦年: year, 年齢: age });
 	}
 
-	return c.json({ years }, 200);
+	return c.json({ 年度一覧: years }, 200);
 });
 
 app.onError((err, c) => {
@@ -207,10 +207,10 @@ app.onError((err, c) => {
 		err.message.includes("JSON") ||
 		err.message.includes("Malformed")
 	) {
-		return c.json({ error: "Invalid JSON format" }, 400);
+		return c.json({ エラー: "Invalid JSON format" }, 400);
 	}
 
-	return c.json({ error: "Internal Server Error" }, 500);
+	return c.json({ エラー: "Internal Server Error" }, 500);
 });
 
 export default app;

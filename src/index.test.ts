@@ -6,9 +6,9 @@ describe("/api/v1/life-planning/simulation", () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "1990-01-01",
-				startYear: 2020,
-				endYear: 2025,
+				生年月日: "1990-01-01",
+				開始年: 2020,
+				終了年: 2025,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -16,17 +16,17 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(200);
-		expect(data.years).toHaveLength(6);
-		expect(data.years[0]).toEqual({ year: 2020, age: 30 });
-		expect(data.years[5]).toEqual({ year: 2025, age: 35 });
+		expect(data.年度一覧).toHaveLength(6);
+		expect(data.年度一覧[0]).toEqual({ 西暦年: 2020, 年齢: 30 });
+		expect(data.年度一覧[5]).toEqual({ 西暦年: 2025, 年齢: 35 });
 	});
 
 	it("必須パラメータが不足している場合400エラーを返す", async () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "1990-01-01",
-				startYear: 2020,
+				生年月日: "1990-01-01",
+				開始年: 2020,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -34,16 +34,16 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.error).toBe("Missing required parameter: endYear");
+		expect(data.エラー).toBe("Missing required parameter: 終了年");
 	});
 
 	it("不正な生年月日フォーマットの場合400エラーを返す", async () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "invalid-date",
-				startYear: 2020,
-				endYear: 2025,
+				生年月日: "invalid-date",
+				開始年: 2020,
+				終了年: 2025,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -51,8 +51,8 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.error).toBe(
-			"Invalid date format for birthDate: expected YYYY-MM-DD format",
+		expect(data.エラー).toBe(
+			"Invalid date format for 生年月日: expected YYYY-MM-DD format",
 		);
 	});
 
@@ -60,9 +60,9 @@ describe("/api/v1/life-planning/simulation", () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "1990-01-01",
-				startYear: 2025,
-				endYear: 2020,
+				生年月日: "1990-01-01",
+				開始年: 2025,
+				終了年: 2020,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -70,7 +70,7 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.error).toBe(
+		expect(data.エラー).toBe(
 			"Start year must be less than or equal to end year",
 		);
 	});
@@ -79,9 +79,9 @@ describe("/api/v1/life-planning/simulation", () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "1850-01-01",
-				startYear: 2024,
-				endYear: 2025,
+				生年月日: "1850-01-01",
+				開始年: 2024,
+				終了年: 2025,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -89,7 +89,7 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.error).toBe(
+		expect(data.エラー).toBe(
 			"Age would exceed maximum allowed age of 150 years",
 		);
 	});
@@ -98,9 +98,9 @@ describe("/api/v1/life-planning/simulation", () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "1874-01-01",
-				startYear: 2024,
-				endYear: 2024,
+				生年月日: "1874-01-01",
+				開始年: 2024,
+				終了年: 2024,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -108,8 +108,8 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(200);
-		expect(data.years).toHaveLength(1);
-		expect(data.years[0]).toEqual({ year: 2024, age: 150 });
+		expect(data.年度一覧).toHaveLength(1);
+		expect(data.年度一覧[0]).toEqual({ 西暦年: 2024, 年齢: 150 });
 	});
 
 	it("不正なJSONフォーマットの場合400エラーを返す", async () => {
@@ -122,16 +122,16 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(400);
-		expect(data.error).toBe("Invalid JSON format");
+		expect(data.エラー).toBe("Invalid JSON format");
 	});
 
 	it("単一年のシミュレーション", async () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
 			method: "POST",
 			body: JSON.stringify({
-				birthDate: "1985-06-15",
-				startYear: 2024,
-				endYear: 2024,
+				生年月日: "1985-06-15",
+				開始年: 2024,
+				終了年: 2024,
 			}),
 			headers: new Headers({ "Content-Type": "application/json" }),
 		});
@@ -139,8 +139,8 @@ describe("/api/v1/life-planning/simulation", () => {
 		const data = await res.json();
 
 		expect(res.status).toBe(200);
-		expect(data.years).toHaveLength(1);
-		expect(data.years[0]).toEqual({ year: 2024, age: 38 });
+		expect(data.年度一覧).toHaveLength(1);
+		expect(data.年度一覧[0]).toEqual({ 西暦年: 2024, 年齢: 38 });
 	});
 });
 
