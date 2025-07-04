@@ -184,7 +184,7 @@ export function fillMissingSocialInsuranceInfo(
 				lastValidRates = rates;
 			}
 		} else if (lastValidRates !== null) {
-			socialInsuranceMap.set(year, lastValidRates);
+			socialInsuranceMap.set(year, { ...lastValidRates });
 		} else {
 			// デフォルト値（保険料率0）を設定
 			socialInsuranceMap.set(year, {
