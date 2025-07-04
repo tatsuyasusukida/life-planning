@@ -1,5 +1,9 @@
 import { swaggerUI } from "@hono/swagger-ui";
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi";
+import {
+	HEALTH_INSURANCE_MONTHLY_SALARY_GRADES,
+	PENSION_MONTHLY_SALARY_GRADES,
+} from "./constants";
 
 // 定数定義
 const MAX_ALLOWED_AGE = 150;
@@ -50,6 +54,163 @@ export function fillMissingSalaryInfo(
 			}
 		} else if (lastValidSalary > 0) {
 			salaryInfoMap.set(year, lastValidSalary);
+		}
+	}
+}
+
+/**
+ * 健康保険の月額給与から標準報酬月額の等級と金額を計算する
+ * @param monthlySalary 月額給与
+ * @returns 標準報酬月額の等級と金額
+ */
+export function calculateHealthInsuranceStandardMonthlySalary(
+	monthlySalary: number,
+): {
+	grade: number;
+	standardAmount: number;
+} {
+	// 負の値は最低等級を適用
+	if (monthlySalary < 0) {
+		const firstGrade = HEALTH_INSURANCE_MONTHLY_SALARY_GRADES[0];
+		return {
+			grade: firstGrade.grade,
+			standardAmount: firstGrade.standardAmount,
+		};
+	}
+
+	for (const gradeInfo of HEALTH_INSURANCE_MONTHLY_SALARY_GRADES) {
+		if (monthlySalary >= gradeInfo.min && monthlySalary < gradeInfo.max) {
+			return {
+				grade: gradeInfo.grade,
+				standardAmount: gradeInfo.standardAmount,
+			};
+		}
+	}
+
+	// 最高等級を適用
+	const lastGrade =
+		HEALTH_INSURANCE_MONTHLY_SALARY_GRADES[
+			HEALTH_INSURANCE_MONTHLY_SALARY_GRADES.length - 1
+		];
+	return {
+		grade: lastGrade.grade,
+		standardAmount: lastGrade.standardAmount,
+	};
+}
+
+/**
+ * 厚生年金保険の月額給与から標準報酬月額の等級と金額を計算する
+ * @param monthlySalary 月額給与
+ * @returns 標準報酬月額の等級と金額
+ */
+export function calculatePensionStandardMonthlySalary(monthlySalary: number): {
+	grade: number;
+	standardAmount: number;
+} {
+	// 負の値は最低等級を適用
+	if (monthlySalary < 0) {
+		const firstGrade = PENSION_MONTHLY_SALARY_GRADES[0];
+		return {
+			grade: firstGrade.grade,
+			standardAmount: firstGrade.standardAmount,
+		};
+	}
+
+	for (const gradeInfo of PENSION_MONTHLY_SALARY_GRADES) {
+		if (monthlySalary >= gradeInfo.min && monthlySalary < gradeInfo.max) {
+			return {
+				grade: gradeInfo.grade,
+				standardAmount: gradeInfo.standardAmount,
+			};
+		}
+	}
+
+	// 最高等級を適用
+	const lastGrade =
+		PENSION_MONTHLY_SALARY_GRADES[PENSION_MONTHLY_SALARY_GRADES.length - 1];
+	return {
+		grade: lastGrade.grade,
+		standardAmount: lastGrade.standardAmount,
+	};
+}
+
+/**
+ * 社会保険料情報の型定義
+ */
+export interface SocialInsuranceRates {
+	健康保険料率: number;
+	介護保険料率: number;
+	厚生年金保険料率: number;
+}
+
+/**
+ * 社会保険料を計算する
+ * @param healthInsuranceStandardSalary 健康保険用標準報酬月額
+ * @param pensionStandardSalary 厚生年金保険用標準報酬月額
+ * @param rates 保険料率
+ * @param age 年齢（介護保険料は40歳以上が対象）
+ * @returns 各種保険料
+ */
+export function calculateSocialInsurancePremiums(
+	healthInsuranceStandardSalary: number,
+	pensionStandardSalary: number,
+	rates: SocialInsuranceRates,
+	age: number,
+): {
+	健康保険料月額: number;
+	介護保険料月額: number;
+	厚生年金保険料月額: number;
+	社会保険料月額: number;
+} {
+	// 保険料は従業員負担分のみ計算（労使折半のため料率を2で割る）
+	const 健康保険料月額 = Math.floor(
+		(healthInsuranceStandardSalary * rates.健康保険料率) / 2,
+	);
+	// 介護保険料は40歳から発生
+	const 介護保険料月額 =
+		age >= 40
+			? Math.floor((healthInsuranceStandardSalary * rates.介護保険料率) / 2)
+			: 0;
+	const 厚生年金保険料月額 = Math.floor(
+		(pensionStandardSalary * rates.厚生年金保険料率) / 2,
+	);
+	const 社会保険料月額 = 健康保険料月額 + 介護保険料月額 + 厚生年金保険料月額;
+
+	return {
+		健康保険料月額,
+		介護保険料月額,
+		厚生年金保険料月額,
+		社会保険料月額,
+	};
+}
+
+/**
+ * 省略された年度の社会保険情報を前年度のデータで補完する
+ * @param socialInsuranceMap 年度別社会保険情報
+ * @param startYear 開始年
+ * @param endYear 終了年
+ */
+export function fillMissingSocialInsuranceInfo(
+	socialInsuranceMap: Map<number, SocialInsuranceRates>,
+	startYear: number,
+	endYear: number,
+): void {
+	let lastValidRates: SocialInsuranceRates | null = null;
+	for (let year = startYear; year <= endYear; year++) {
+		if (socialInsuranceMap.has(year)) {
+			const rates = socialInsuranceMap.get(year);
+			if (rates !== undefined) {
+				lastValidRates = rates;
+			}
+		} else if (lastValidRates !== null) {
+			socialInsuranceMap.set(year, { ...lastValidRates });
+		} else {
+			// デフォルト値（保険料率0）を設定
+			socialInsuranceMap.set(year, {
+				健康保険料率: 0,
+				介護保険料率: 0,
+				厚生年金保険料率: 0,
+			});
 		}
 	}
 }
@@ -162,6 +323,31 @@ const LifePlanningRequestSchema = z.object({
 			}),
 		)
 		.openapi({ example: [{ 年度: 2024, 収入金額: 5000000 }] }),
+	年度別社会保険情報: z
+		.array(
+			z.object({
+				年度: z
+					.number()
+					.int()
+					.min(MIN_YEAR)
+					.max(MAX_YEAR)
+					.openapi({ example: 2024 }),
+				健康保険料率: z.number().min(0).max(1).openapi({ example: 0.0981 }),
+				介護保険料率: z.number().min(0).max(1).openapi({ example: 0.0164 }),
+				厚生年金保険料率: z.number().min(0).max(1).openapi({ example: 0.183 }),
+			}),
+		)
+		.optional()
+		.openapi({
+			example: [
+				{
+					年度: 2024,
+					健康保険料率: 0.0981,
+					介護保険料率: 0.0164,
+					厚生年金保険料率: 0.183,
+				},
+			],
+		}),
 });
 
 const LifePlanningResponseSchema = z.object({
@@ -172,6 +358,13 @@ const LifePlanningResponseSchema = z.object({
 			収入金額: z.number(),
 			給与所得控除額: z.number(),
 			給与所得控除後の金額: z.number(),
+			標準報酬月額等級: z.number().int(),
+			標準報酬月額: z.number(),
+			健康保険料月額: z.number(),
+			介護保険料月額: z.number(),
+			厚生年金保険料月額: z.number(),
+			社会保険料月額: z.number(),
+			社会保険料年額: z.number(),
 		}),
 	),
 });
@@ -247,12 +440,34 @@ app.openapi(lifePlanningRoute, async (c) => {
 	// 省略された年度の給与情報を前年度のデータで補完
 	fillMissingSalaryInfo(salaryInfoMap, body.開始年, body.終了年);
 
+	// 社会保険情報のマップを作成
+	const socialInsuranceMap = new Map<number, SocialInsuranceRates>();
+	if (body.年度別社会保険情報) {
+		for (const info of body.年度別社会保険情報) {
+			socialInsuranceMap.set(info.年度, {
+				健康保険料率: info.健康保険料率,
+				介護保険料率: info.介護保険料率,
+				厚生年金保険料率: info.厚生年金保険料率,
+			});
+		}
+	}
+
+	// 省略された年度の社会保険情報を前年度のデータで補完
+	fillMissingSocialInsuranceInfo(socialInsuranceMap, body.開始年, body.終了年);
+
 	const years: Array<{
 		西暦年: number;
 		年齢: number;
 		収入金額: number;
 		給与所得控除額: number;
 		給与所得控除後の金額: number;
+		標準報酬月額等級: number;
+		標準報酬月額: number;
+		健康保険料月額: number;
+		介護保険料月額: number;
+		厚生年金保険料月額: number;
+		社会保険料月額: number;
+		社会保険料年額: number;
 	}> = [];
 
 	for (let year = body.開始年; year <= body.終了年; year++) {
@@ -274,12 +489,39 @@ app.openapi(lifePlanningRoute, async (c) => {
 		const deduction = Math.min(calculateSalaryDeduction(income), income);
 		const afterDeduction = income - deduction;
 
+		// 標準報酬月額の計算
+		const monthlySalary = income / 12;
+		const healthInsuranceStandardSalaryInfo =
+			calculateHealthInsuranceStandardMonthlySalary(monthlySalary);
+		const pensionStandardSalaryInfo =
+			calculatePensionStandardMonthlySalary(monthlySalary);
+
+		// 社会保険料の計算
+		const socialInsuranceRates = socialInsuranceMap.get(year) ?? {
+			健康保険料率: 0,
+			介護保険料率: 0,
+			厚生年金保険料率: 0,
+		};
+		const socialInsurancePremiums = calculateSocialInsurancePremiums(
+			healthInsuranceStandardSalaryInfo.standardAmount,
+			pensionStandardSalaryInfo.standardAmount,
+			socialInsuranceRates,
+			age,
+		);
+
 		const yearData = {
 			西暦年: year,
 			年齢: age,
 			収入金額: income,
 			給与所得控除額: deduction,
 			給与所得控除後の金額: afterDeduction,
+			標準報酬月額等級: healthInsuranceStandardSalaryInfo.grade,
+			標準報酬月額: healthInsuranceStandardSalaryInfo.standardAmount,
+			健康保険料月額: socialInsurancePremiums.健康保険料月額,
+			介護保険料月額: socialInsurancePremiums.介護保険料月額,
+			厚生年金保険料月額: socialInsurancePremiums.厚生年金保険料月額,
+			社会保険料月額: socialInsurancePremiums.社会保険料月額,
+			社会保険料年額: socialInsurancePremiums.社会保険料月額 * 12,
 		};
 
 		years.push(yearData);

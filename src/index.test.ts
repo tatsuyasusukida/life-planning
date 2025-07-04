@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import app, { fillMissingSalaryInfo } from "./index";
+import app, {
+	calculateHealthInsuranceStandardMonthlySalary,
+	calculatePensionStandardMonthlySalary,
+	calculateSocialInsurancePremiums,
+	fillMissingSalaryInfo,
+	fillMissingSocialInsuranceInfo,
+	type SocialInsuranceRates,
+} from "./index";
 
 describe("fillMissingSalaryInfo", () => {
 	it("省略された年度を前年度のデータで補完する", () => {
@@ -53,6 +60,82 @@ describe("fillMissingSalaryInfo", () => {
 	});
 });
 
+describe("fillMissingSocialInsuranceInfo", () => {
+	it("省略された年度を前年度のデータで補完する", () => {
+		const socialInsuranceMap = new Map<number, SocialInsuranceRates>();
+		socialInsuranceMap.set(2020, {
+			健康保険料率: 0.0981,
+			介護保険料率: 0.0164,
+			厚生年金保険料率: 0.183,
+		});
+		socialInsuranceMap.set(2023, {
+			健康保険料率: 0.1,
+			介護保険料率: 0.0165,
+			厚生年金保険料率: 0.183,
+		});
+
+		fillMissingSocialInsuranceInfo(socialInsuranceMap, 2020, 2025);
+
+		expect(socialInsuranceMap.get(2020)).toEqual({
+			健康保険料率: 0.0981,
+			介護保険料率: 0.0164,
+			厚生年金保険料率: 0.183,
+		});
+		expect(socialInsuranceMap.get(2021)).toEqual({
+			健康保険料率: 0.0981,
+			介護保険料率: 0.0164,
+			厚生年金保険料率: 0.183,
+		});
+		expect(socialInsuranceMap.get(2022)).toEqual({
+			健康保険料率: 0.0981,
+			介護保険料率: 0.0164,
+			厚生年金保険料率: 0.183,
+		});
+		expect(socialInsuranceMap.get(2023)).toEqual({
+			健康保険料率: 0.1,
+			介護保険料率: 0.0165,
+			厚生年金保険料率: 0.183,
+		});
+		expect(socialInsuranceMap.get(2024)).toEqual({
+			健康保険料率: 0.1,
+			介護保険料率: 0.0165,
+			厚生年金保険料率: 0.183,
+		});
+		expect(socialInsuranceMap.get(2025)).toEqual({
+			健康保険料率: 0.1,
+			介護保険料率: 0.0165,
+			厚生年金保険料率: 0.183,
+		});
+	});
+
+	it("最初の年度に社会保険情報がない場合はデフォルト値（0）を設定", () => {
+		const socialInsuranceMap = new Map<number, SocialInsuranceRates>();
+		socialInsuranceMap.set(2022, {
+			健康保険料率: 0.0981,
+			介護保険料率: 0.0164,
+			厚生年金保険料率: 0.183,
+		});
+
+		fillMissingSocialInsuranceInfo(socialInsuranceMap, 2020, 2025);
+
+		expect(socialInsuranceMap.get(2020)).toEqual({
+			健康保険料率: 0,
+			介護保険料率: 0,
+			厚生年金保険料率: 0,
+		});
+		expect(socialInsuranceMap.get(2021)).toEqual({
+			健康保険料率: 0,
+			介護保険料率: 0,
+			厚生年金保険料率: 0,
+		});
+		expect(socialInsuranceMap.get(2022)).toEqual({
+			健康保険料率: 0.0981,
+			介護保険料率: 0.0164,
+			厚生年金保険料率: 0.183,
+		});
+	});
+});
+
 describe("/api/v1/life-planning/simulation", () => {
 	it("正常なリクエストで年齢を計算する", async () => {
 		const res = await app.request("/api/v1/life-planning/simulation", {
@@ -83,6 +166,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5000000,
 			給与所得控除額: 1440000,
 			給与所得控除後の金額: 3560000,
+			標準報酬月額等級: 27,
+			標準報酬月額: 410000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 		expect(data.年度一覧[5]).toEqual({
 			西暦年: 2025,
@@ -90,6 +180,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 6000000,
 			給与所得控除額: 1640000,
 			給与所得控除後の金額: 4360000,
+			標準報酬月額等級: 30,
+			標準報酬月額: 500000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 	});
 
@@ -204,6 +301,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5000000,
 			給与所得控除額: 1440000,
 			給与所得控除後の金額: 3560000,
+			標準報酬月額等級: 27,
+			標準報酬月額: 410000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 	});
 
@@ -242,6 +346,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 6000000,
 			給与所得控除額: 1640000,
 			給与所得控除後の金額: 4360000,
+			標準報酬月額等級: 30,
+			標準報酬月額: 500000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 	});
 
@@ -272,6 +383,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5000000,
 			給与所得控除額: 1440000,
 			給与所得控除後の金額: 3560000,
+			標準報酬月額等級: 27,
+			標準報酬月額: 410000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 
 		// 2021年は2020年と同額で補完
@@ -281,6 +399,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5000000,
 			給与所得控除額: 1440000,
 			給与所得控除後の金額: 3560000,
+			標準報酬月額等級: 27,
+			標準報酬月額: 410000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 
 		// 2022年も2020年と同額で補完
@@ -290,6 +415,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5000000,
 			給与所得控除額: 1440000,
 			給与所得控除後の金額: 3560000,
+			標準報酬月額等級: 27,
+			標準報酬月額: 410000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 
 		// 2023年の情報
@@ -299,6 +431,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5500000,
 			給与所得控除額: 1540000,
 			給与所得控除後の金額: 3960000,
+			標準報酬月額等級: 29,
+			標準報酬月額: 470000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 
 		// 2024年は2023年と同額で補完
@@ -308,6 +447,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5500000,
 			給与所得控除額: 1540000,
 			給与所得控除後の金額: 3960000,
+			標準報酬月額等級: 29,
+			標準報酬月額: 470000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 	});
 
@@ -335,6 +481,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 0,
 			給与所得控除額: 0,
 			給与所得控除後の金額: 0,
+			標準報酬月額等級: 1,
+			標準報酬月額: 58000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 
 		// 2021年も給与情報がないので収入0（控除額は収入金額以下に制限）
@@ -344,6 +497,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 0,
 			給与所得控除額: 0,
 			給与所得控除後の金額: 0,
+			標準報酬月額等級: 1,
+			標準報酬月額: 58000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 
 		// 2022年は給与情報あり
@@ -353,6 +513,13 @@ describe("/api/v1/life-planning/simulation", () => {
 			収入金額: 5000000,
 			給与所得控除額: 1440000,
 			給与所得控除後の金額: 3560000,
+			標準報酬月額等級: 27,
+			標準報酬月額: 410000,
+			健康保険料月額: 0,
+			介護保険料月額: 0,
+			厚生年金保険料月額: 0,
+			社会保険料月額: 0,
+			社会保険料年額: 0,
 		});
 	});
 
@@ -434,6 +601,383 @@ describe("/api/v1/life-planning/simulation", () => {
 		expect(data.年度一覧[2].収入金額).toBe(1000000);
 		expect(data.年度一覧[2].給与所得控除額).toBe(550000);
 		expect(data.年度一覧[2].給与所得控除後の金額).toBe(450000);
+	});
+
+	it("社会保険料の計算テスト", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1980-01-01",
+				開始年: 2024,
+				終了年: 2024,
+				年度別給与情報: [{ 年度: 2024, 収入金額: 6000000 }],
+				年度別社会保険情報: [
+					{
+						年度: 2024,
+						健康保険料率: 0.0981,
+						介護保険料率: 0.0164,
+						厚生年金保険料率: 0.183,
+					},
+				],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(1);
+
+		const yearData = data.年度一覧[0];
+		expect(yearData.西暦年).toBe(2024);
+		expect(yearData.収入金額).toBe(6000000);
+
+		// 月額50万円 → 標準報酬月額50万円(等級30)
+		expect(yearData.標準報酬月額等級).toBe(30);
+		expect(yearData.標準報酬月額).toBe(500000);
+
+		// 健康保険料: 500,000 × 0.0981 ÷ 2 = 24,525円（小数点以下切り捨て）
+		expect(yearData.健康保険料月額).toBe(24525);
+
+		// 介護保険料: 500,000 × 0.0164 ÷ 2 = 4,100円（44歳なので発生）
+		expect(yearData.介護保険料月額).toBe(4100);
+
+		// 厚生年金保険料: 500,000 × 0.183 ÷ 2 = 45,750円
+		expect(yearData.厚生年金保険料月額).toBe(45750);
+
+		// 社会保険料合計
+		expect(yearData.社会保険料月額).toBe(24525 + 4100 + 45750);
+		expect(yearData.社会保険料年額).toBe((24525 + 4100 + 45750) * 12);
+	});
+
+	it("40歳未満は介護保険料0", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				開始年: 2024,
+				終了年: 2024,
+				年度別給与情報: [{ 年度: 2024, 収入金額: 6000000 }],
+				年度別社会保険情報: [
+					{
+						年度: 2024,
+						健康保険料率: 0.0981,
+						介護保険料率: 0.0164,
+						厚生年金保険料率: 0.183,
+					},
+				],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(1);
+
+		const yearData = data.年度一覧[0];
+		expect(yearData.年齢).toBe(34);
+
+		// 健康保険料: 500,000 × 0.0981 ÷ 2 = 24,525円（小数点以下切り捨て）
+		expect(yearData.健康保険料月額).toBe(24525);
+
+		// 介護保険料: 34歳なので0円
+		expect(yearData.介護保険料月額).toBe(0);
+
+		// 厚生年金保険料: 500,000 × 0.183 ÷ 2 = 45,750円
+		expect(yearData.厚生年金保険料月額).toBe(45750);
+
+		// 社会保険料合計
+		expect(yearData.社会保険料月額).toBe(24525 + 0 + 45750);
+		expect(yearData.社会保険料年額).toBe((24525 + 0 + 45750) * 12);
+	});
+
+	it("社会保険情報なしの場合は保険料0", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				開始年: 2024,
+				終了年: 2024,
+				年度別給与情報: [{ 年度: 2024, 収入金額: 5000000 }],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(1);
+
+		const yearData = data.年度一覧[0];
+		expect(yearData.健康保険料月額).toBe(0);
+		expect(yearData.介護保険料月額).toBe(0);
+		expect(yearData.厚生年金保険料月額).toBe(0);
+		expect(yearData.社会保険料月額).toBe(0);
+		expect(yearData.社会保険料年額).toBe(0);
+	});
+
+	it("標準報酬月額の等級計算テスト", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				開始年: 2024,
+				終了年: 2026,
+				年度別給与情報: [
+					{ 年度: 2024, 収入金額: 1000000 }, // 月額約8.3万円 → 等級4（8.8万円）
+					{ 年度: 2025, 収入金額: 3600000 }, // 月額30万円 → 等級22（30万円）
+					{ 年度: 2026, 収入金額: 8000000 }, // 月額約66.7万円 → 等級35（65万円）
+				],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(3);
+
+		// 月額約8.3万円 → 等級4（標準報酬月額8.8万円）
+		expect(data.年度一覧[0].標準報酬月額等級).toBe(4);
+		expect(data.年度一覧[0].標準報酬月額).toBe(88000);
+
+		// 月額30万円 → 等級22（標準報酬月額30万円）
+		expect(data.年度一覧[1].標準報酬月額等級).toBe(22);
+		expect(data.年度一覧[1].標準報酬月額).toBe(300000);
+
+		// 月額約66.7万円 → 等級36（標準報酬月額68万円）
+		expect(data.年度一覧[2].標準報酬月額等級).toBe(36);
+		expect(data.年度一覧[2].標準報酬月額).toBe(680000);
+	});
+});
+
+describe("calculateHealthInsuranceStandardMonthlySalary", () => {
+	it("最低等級未満の給与の場合は等級1を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(30000);
+		expect(result.grade).toBe(1);
+		expect(result.standardAmount).toBe(58000);
+	});
+
+	it("等級1の範囲内の給与の場合は等級1を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(50000);
+		expect(result.grade).toBe(1);
+		expect(result.standardAmount).toBe(58000);
+	});
+
+	it("等級1の上限丁度の給与の場合は等級2を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(63000);
+		expect(result.grade).toBe(2);
+		expect(result.standardAmount).toBe(68000);
+	});
+
+	it("等級2の範囲内の給与の場合は等級2を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(68000);
+		expect(result.grade).toBe(2);
+		expect(result.standardAmount).toBe(68000);
+	});
+
+	it("等級2の上限丁度の給与の場合は等級3を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(73000);
+		expect(result.grade).toBe(3);
+		expect(result.standardAmount).toBe(78000);
+	});
+
+	it("中間等級の給与の場合は正しい等級を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(300000);
+		expect(result.grade).toBe(22);
+		expect(result.standardAmount).toBe(300000);
+	});
+
+	it("最高等級の範囲内の給与の場合は最高等級を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(1300000);
+		expect(result.grade).toBe(49);
+		expect(result.standardAmount).toBe(1330000);
+	});
+
+	it("最高等級を超える給与の場合は最高等級を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(2000000);
+		expect(result.grade).toBe(50);
+		expect(result.standardAmount).toBe(1390000);
+	});
+});
+
+describe("calculatePensionStandardMonthlySalary", () => {
+	it("最低等級未満の給与の場合は等級4を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(80000);
+		expect(result.grade).toBe(4);
+		expect(result.standardAmount).toBe(88000);
+	});
+
+	it("等級4の範囲内の給与の場合は等級4を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(90000);
+		expect(result.grade).toBe(4);
+		expect(result.standardAmount).toBe(88000);
+	});
+
+	it("等級4の上限丁度の給与の場合は等級5を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(93000);
+		expect(result.grade).toBe(5);
+		expect(result.standardAmount).toBe(98000);
+	});
+
+	it("等級5の範囲内の給与の場合は等級5を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(98000);
+		expect(result.grade).toBe(5);
+		expect(result.standardAmount).toBe(98000);
+	});
+
+	it("等級5の上限丁度の給与の場合は等級6を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(101000);
+		expect(result.grade).toBe(6);
+		expect(result.standardAmount).toBe(104000);
+	});
+
+	it("中間等級の給与の場合は正しい等級を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(300000);
+		expect(result.grade).toBe(22);
+		expect(result.standardAmount).toBe(300000);
+	});
+
+	it("最高等級の範囲内の給与の場合は最高等級を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(620000);
+		expect(result.grade).toBe(34);
+		expect(result.standardAmount).toBe(620000);
+	});
+
+	it("最高等級を超える給与の場合は最高等級を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(1000000);
+		expect(result.grade).toBe(35);
+		expect(result.standardAmount).toBe(650000);
+	});
+});
+
+describe("calculateSocialInsurancePremiums", () => {
+	const rates: SocialInsuranceRates = {
+		健康保険料率: 0.0981,
+		介護保険料率: 0.0164,
+		厚生年金保険料率: 0.183,
+	};
+
+	it("40歳未満の場合は介護保険料が0円", () => {
+		const result = calculateSocialInsurancePremiums(
+			500000, // 健康保険用標準報酬月額
+			500000, // 厚生年金保険用標準報酬月額
+			rates,
+			39, // 39歳
+		);
+
+		expect(result.健康保険料月額).toBe(24525); // 500000 × 0.0981 ÷ 2
+		expect(result.介護保険料月額).toBe(0); // 40歳未満なので0
+		expect(result.厚生年金保険料月額).toBe(45750); // 500000 × 0.183 ÷ 2
+		expect(result.社会保険料月額).toBe(24525 + 0 + 45750);
+	});
+
+	it("40歳以上の場合は介護保険料が発生", () => {
+		const result = calculateSocialInsurancePremiums(
+			500000, // 健康保険用標準報酬月額
+			500000, // 厚生年金保険用標準報酬月額
+			rates,
+			40, // 40歳
+		);
+
+		expect(result.健康保険料月額).toBe(24525); // 500000 × 0.0981 ÷ 2
+		expect(result.介護保険料月額).toBe(4100); // 500000 × 0.0164 ÷ 2
+		expect(result.厚生年金保険料月額).toBe(45750); // 500000 × 0.183 ÷ 2
+		expect(result.社会保険料月額).toBe(24525 + 4100 + 45750);
+	});
+
+	it("負の標準報酬月額の場合は負の値のまま計算", () => {
+		const result = calculateSocialInsurancePremiums(
+			-100000, // 負の値
+			-100000, // 負の値
+			rates,
+			45, // 45歳
+		);
+
+		expect(result.健康保険料月額).toBe(-4905); // -100000 × 0.0981 ÷ 2 = -4905
+		expect(result.介護保険料月額).toBe(-821); // -100000 × 0.0164 ÷ 2 = -820 → Math.floor(-820) = -821
+		expect(result.厚生年金保険料月額).toBe(-9150); // -100000 × 0.183 ÷ 2 = -9150
+		expect(result.社会保険料月額).toBe(-4905 + -821 + -9150);
+	});
+
+	it("標準報酬月額が0の場合は0円", () => {
+		const result = calculateSocialInsurancePremiums(
+			0, // 0円
+			0, // 0円
+			rates,
+			45, // 45歳
+		);
+
+		expect(result.健康保険料月額).toBe(0);
+		expect(result.介護保険料月額).toBe(0);
+		expect(result.厚生年金保険料月額).toBe(0);
+		expect(result.社会保険料月額).toBe(0);
+	});
+
+	it("保険料率が0の場合は0円", () => {
+		const zeroRates: SocialInsuranceRates = {
+			健康保険料率: 0,
+			介護保険料率: 0,
+			厚生年金保険料率: 0,
+		};
+
+		const result = calculateSocialInsurancePremiums(
+			500000, // 健康保険用標準報酬月額
+			500000, // 厚生年金保険用標準報酬月額
+			zeroRates,
+			45, // 45歳
+		);
+
+		expect(result.健康保険料月額).toBe(0);
+		expect(result.介護保険料月額).toBe(0);
+		expect(result.厚生年金保険料月額).toBe(0);
+		expect(result.社会保険料月額).toBe(0);
+	});
+
+	it("高額な標準報酬月額の場合も正しく計算", () => {
+		const result = calculateSocialInsurancePremiums(
+			1390000, // 健康保険の最高等級
+			650000, // 厚生年金の最高等級
+			rates,
+			50, // 50歳
+		);
+
+		expect(result.健康保険料月額).toBe(68179); // 1390000 × 0.0981 ÷ 2 = 68179.5 → 68179
+		expect(result.介護保険料月額).toBe(11398); // 1390000 × 0.0164 ÷ 2 = 11398
+		expect(result.厚生年金保険料月額).toBe(59475); // 650000 × 0.183 ÷ 2 = 59475
+		expect(result.社会保険料月額).toBe(68179 + 11398 + 59475);
+	});
+
+	it("小数点以下は切り捨てで計算", () => {
+		const result = calculateSocialInsurancePremiums(
+			100000, // 健康保険用標準報酬月額
+			100000, // 厚生年金保険用標準報酬月額
+			rates,
+			45, // 45歳
+		);
+
+		// 100000 × 0.0981 ÷ 2 = 4905
+		expect(result.健康保険料月額).toBe(4905);
+		// 100000 × 0.0164 ÷ 2 = 820
+		expect(result.介護保険料月額).toBe(820);
+		// 100000 × 0.183 ÷ 2 = 9150
+		expect(result.厚生年金保険料月額).toBe(9150);
+		expect(result.社会保険料月額).toBe(4905 + 820 + 9150);
+	});
+
+	it("健康保険と厚生年金の標準報酬月額が異なる場合", () => {
+		const result = calculateSocialInsurancePremiums(
+			300000, // 健康保険用標準報酬月額
+			400000, // 厚生年金保険用標準報酬月額
+			rates,
+			45, // 45歳
+		);
+
+		expect(result.健康保険料月額).toBe(14715); // 300000 × 0.0981 ÷ 2
+		expect(result.介護保険料月額).toBe(2460); // 300000 × 0.0164 ÷ 2
+		expect(result.厚生年金保険料月額).toBe(36600); // 400000 × 0.183 ÷ 2
+		expect(result.社会保険料月額).toBe(14715 + 2460 + 36600);
 	});
 });
 
