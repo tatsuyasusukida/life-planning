@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import app, {
+	calculateAgeOnJanuary1,
 	calculateHealthInsuranceStandardMonthlySalary,
 	calculatePensionStandardMonthlySalary,
 	calculateSocialInsurancePremiums,
@@ -750,6 +751,114 @@ describe("/api/v1/life-planning/simulation", () => {
 		expect(data.年度一覧[2].標準報酬月額等級).toBe(36);
 		expect(data.年度一覧[2].標準報酬月額).toBe(680000);
 	});
+
+	it("配偶者と子供の年齢計算テスト", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				配偶者の生年月日: "1992-05-15",
+				子供の情報: [{ 生年月日: "2020-03-10" }, { 生年月日: "2022-07-25" }],
+				配偶者の年収: 4000000,
+				開始年: 2024,
+				終了年: 2025,
+				年度別給与情報: [
+					{ 年度: 2024, 収入金額: 5000000 },
+					{ 年度: 2025, 収入金額: 5200000 },
+				],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(2);
+
+		// 2024年の年齢チェック
+		expect(data.年度一覧[0].西暦年).toBe(2024);
+		expect(data.年度一覧[0].年齢).toBe(34); // 1990-01-01生まれの2024年1月1日時点の年齢
+		expect(data.年度一覧[0].配偶者の年齢).toBe(31); // 1992-05-15生まれの2024年1月1日時点の年齢
+		expect(data.年度一覧[0].子供の情報).toEqual([{ 年齢: 3 }, { 年齢: 1 }]); // 2020-03-10と2022-07-25生まれの2024年1月1日時点の年齢
+
+		// 2025年の年齢チェック
+		expect(data.年度一覧[1].西暦年).toBe(2025);
+		expect(data.年度一覧[1].年齢).toBe(35); // 1990-01-01生まれの2025年1月1日時点の年齢
+		expect(data.年度一覧[1].配偶者の年齢).toBe(32); // 1992-05-15生まれの2025年1月1日時点の年齢
+		expect(data.年度一覧[1].子供の情報).toEqual([{ 年齢: 4 }, { 年齢: 2 }]); // 2020-03-10と2022-07-25生まれの2025年1月1日時点の年齢
+	});
+
+	it("配偶者と子供の情報なしの場合、年齢フィールドが含まれない", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				開始年: 2024,
+				終了年: 2024,
+				年度別給与情報: [{ 年度: 2024, 収入金額: 5000000 }],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(1);
+
+		// 配偶者と子供の情報フィールドが含まれていないことを確認
+		expect(data.年度一覧[0].年齢).toBe(34);
+		expect(data.年度一覧[0]).not.toHaveProperty("配偶者の年齢");
+		expect(data.年度一覧[0]).not.toHaveProperty("子供の情報");
+	});
+
+	it("配偶者のみの情報がある場合", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				配偶者の生年月日: "1992-05-15",
+				配偶者の年収: 4000000,
+				開始年: 2024,
+				終了年: 2024,
+				年度別給与情報: [{ 年度: 2024, 収入金額: 5000000 }],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(1);
+
+		// 配偶者の年齢フィールドが含まれていることを確認
+		expect(data.年度一覧[0].年齢).toBe(34);
+		expect(data.年度一覧[0].配偶者の年齢).toBe(31);
+		expect(data.年度一覧[0]).not.toHaveProperty("子供の情報");
+	});
+
+	it("子供のみの情報がある場合", async () => {
+		const res = await app.request("/api/v1/life-planning/simulation", {
+			method: "POST",
+			body: JSON.stringify({
+				生年月日: "1990-01-01",
+				子供の情報: [{ 生年月日: "2020-03-10" }],
+				開始年: 2024,
+				終了年: 2024,
+				年度別給与情報: [{ 年度: 2024, 収入金額: 5000000 }],
+			}),
+			headers: new Headers({ "Content-Type": "application/json" }),
+		});
+
+		const data = await res.json();
+
+		expect(res.status).toBe(200);
+		expect(data.年度一覧).toHaveLength(1);
+
+		// 子供の情報フィールドが含まれていることを確認
+		expect(data.年度一覧[0].年齢).toBe(34);
+		expect(data.年度一覧[0].子供の情報).toEqual([{ 年齢: 3 }]);
+		expect(data.年度一覧[0]).not.toHaveProperty("配偶者の年齢");
+	});
 });
 
 describe("calculateHealthInsuranceStandardMonthlySalary", () => {
@@ -1027,5 +1136,37 @@ describe("/ui", () => {
 		expect(html).toContain('<html lang="en">');
 		expect(html).toContain("SwaggerUI");
 		expect(html).toContain("/doc"); // OpenAPI仕様のURLが参照されている
+	});
+});
+
+describe("calculateAgeOnJanuary1", () => {
+	it("1月1日生まれの場合、正確な年齢を計算する", () => {
+		const age = calculateAgeOnJanuary1("1990-01-01", 2024);
+		expect(age).toBe(34);
+	});
+
+	it("誕生日が1月1日より後の場合、前年の年齢を返す", () => {
+		const age = calculateAgeOnJanuary1("1990-06-15", 2024);
+		expect(age).toBe(33); // 2024年1月1日時点では33歳
+	});
+
+	it("誕生日が12月31日の場合、前年の年齢を返す", () => {
+		const age = calculateAgeOnJanuary1("1990-12-31", 2024);
+		expect(age).toBe(33); // 2024年1月1日時点では33歳
+	});
+
+	it("うるう年の2月29日生まれの場合、正しく計算する", () => {
+		const age = calculateAgeOnJanuary1("1992-02-29", 2024);
+		expect(age).toBe(31); // 2024年1月1日時点では31歳
+	});
+
+	it("未来の年で計算する", () => {
+		const age = calculateAgeOnJanuary1("2000-01-01", 2050);
+		expect(age).toBe(50);
+	});
+
+	it("過去の年で計算する", () => {
+		const age = calculateAgeOnJanuary1("1950-01-01", 2000);
+		expect(age).toBe(50);
 	});
 });

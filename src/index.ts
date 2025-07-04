@@ -215,6 +215,32 @@ export function fillMissingSocialInsuranceInfo(
 	}
 }
 
+/**
+ * 指定された年の1月1日時点での年齢を計算する
+ * @param birthDateString 生年月日の文字列（YYYY-MM-DD形式）
+ * @param targetYear 計算対象の年
+ * @returns 1月1日時点での満年齢
+ */
+export function calculateAgeOnJanuary1(
+	birthDateString: string,
+	targetYear: number,
+): number {
+	const birthDate = new Date(birthDateString);
+	const currentYearStart = new Date(targetYear, 0, 1); // 年の1月1日
+	const age =
+		currentYearStart.getFullYear() -
+		birthDate.getFullYear() -
+		(currentYearStart <
+		new Date(
+			currentYearStart.getFullYear(),
+			birthDate.getMonth(),
+			birthDate.getDate(),
+		)
+			? 1
+			: 0);
+	return age;
+}
+
 const app = new OpenAPIHono({
 	defaultHook: (result, c) => {
 		if (!result.success) {
@@ -298,6 +324,22 @@ app.get("/ui", swaggerUI({ url: "/doc" }));
 
 const LifePlanningRequestSchema = z.object({
 	生年月日: z.string().date().openapi({ example: "1990-01-01" }),
+	配偶者の生年月日: z
+		.string()
+		.date()
+		.optional()
+		.openapi({ example: "1992-05-15" }),
+	配偶者の年収: z.number().min(0).optional().openapi({ example: 4000000 }),
+	子供の情報: z
+		.array(
+			z.object({
+				生年月日: z.string().date(),
+			}),
+		)
+		.optional()
+		.openapi({
+			example: [{ 生年月日: "2020-03-10" }, { 生年月日: "2022-07-25" }],
+		}),
 	開始年: z
 		.number()
 		.int()
@@ -355,6 +397,14 @@ const LifePlanningResponseSchema = z.object({
 		z.object({
 			西暦年: z.number().int(),
 			年齢: z.number().int(),
+			配偶者の年齢: z.number().int().optional(),
+			子供の情報: z
+				.array(
+					z.object({
+						年齢: z.number().int(),
+					}),
+				)
+				.optional(),
 			収入金額: z.number(),
 			給与所得控除額: z.number(),
 			給与所得控除後の金額: z.number(),
@@ -420,10 +470,8 @@ app.openapi(lifePlanningRoute, async (c) => {
 		return c.json({ エラー: "開始年は終了年以下である必要があります" }, 400);
 	}
 
-	const birthDate = new Date(body.生年月日);
-
 	// 年齢の妥当性チェック
-	const maxAgeInEndYear = body.終了年 - birthDate.getFullYear();
+	const maxAgeInEndYear = calculateAgeOnJanuary1(body.生年月日, body.終了年);
 	if (maxAgeInEndYear > MAX_ALLOWED_AGE) {
 		return c.json(
 			{
@@ -458,6 +506,8 @@ app.openapi(lifePlanningRoute, async (c) => {
 	const years: Array<{
 		西暦年: number;
 		年齢: number;
+		配偶者の年齢?: number;
+		子供の情報?: Array<{ 年齢: number }>;
 		収入金額: number;
 		給与所得控除額: number;
 		給与所得控除後の金額: number;
@@ -472,18 +522,15 @@ app.openapi(lifePlanningRoute, async (c) => {
 
 	for (let year = body.開始年; year <= body.終了年; year++) {
 		// 1月1日時点での満年齢を計算
-		const currentYearStart = new Date(year, 0, 1); // 年の1月1日
-		const age =
-			currentYearStart.getFullYear() -
-			birthDate.getFullYear() -
-			(currentYearStart <
-			new Date(
-				currentYearStart.getFullYear(),
-				birthDate.getMonth(),
-				birthDate.getDate(),
-			)
-				? 1
-				: 0);
+		const age = calculateAgeOnJanuary1(body.生年月日, year);
+		const spouseAge = body.配偶者の生年月日
+			? calculateAgeOnJanuary1(body.配偶者の生年月日, year)
+			: undefined;
+		const childrenInfo = body.子供の情報
+			? body.子供の情報.map((child) => ({
+					年齢: calculateAgeOnJanuary1(child.生年月日, year),
+				}))
+			: undefined;
 
 		const income = salaryInfoMap.get(year) ?? 0;
 		const deduction = Math.min(calculateSalaryDeduction(income), income);
@@ -512,6 +559,8 @@ app.openapi(lifePlanningRoute, async (c) => {
 		const yearData = {
 			西暦年: year,
 			年齢: age,
+			...(spouseAge !== undefined && { 配偶者の年齢: spouseAge }),
+			...(childrenInfo !== undefined && { 子供の情報: childrenInfo }),
 			収入金額: income,
 			給与所得控除額: deduction,
 			給与所得控除後の金額: afterDeduction,
