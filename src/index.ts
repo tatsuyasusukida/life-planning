@@ -151,36 +151,36 @@ export interface SocialInsuranceRates {
  * @param age 年齢（介護保険料は40歳以上が対象）
  * @returns 各種保険料
  */
-function calculateSocialInsurancePremiums(
+export function calculateSocialInsurancePremiums(
 	healthInsuranceStandardSalary: number,
 	pensionStandardSalary: number,
 	rates: SocialInsuranceRates,
 	age: number,
 ): {
-	健康保険料: number;
-	介護保険料: number;
-	厚生年金保険料: number;
-	社会保険料: number;
+	健康保険料月額: number;
+	介護保険料月額: number;
+	厚生年金保険料月額: number;
+	社会保険料月額: number;
 } {
 	// 保険料は従業員負担分のみ計算（労使折半のため料率を2で割る）
-	const 健康保険料 = Math.floor(
+	const 健康保険料月額 = Math.floor(
 		(healthInsuranceStandardSalary * rates.健康保険料率) / 2,
 	);
 	// 介護保険料は40歳から発生
-	const 介護保険料 =
+	const 介護保険料月額 =
 		age >= 40
 			? Math.floor((healthInsuranceStandardSalary * rates.介護保険料率) / 2)
 			: 0;
-	const 厚生年金保険料 = Math.floor(
+	const 厚生年金保険料月額 = Math.floor(
 		(pensionStandardSalary * rates.厚生年金保険料率) / 2,
 	);
-	const 社会保険料 = 健康保険料 + 介護保険料 + 厚生年金保険料;
+	const 社会保険料月額 = 健康保険料月額 + 介護保険料月額 + 厚生年金保険料月額;
 
 	return {
-		健康保険料,
-		介護保険料,
-		厚生年金保険料,
-		社会保険料,
+		健康保険料月額,
+		介護保険料月額,
+		厚生年金保険料月額,
+		社会保険料月額,
 	};
 }
 
@@ -517,11 +517,11 @@ app.openapi(lifePlanningRoute, async (c) => {
 			給与所得控除後の金額: afterDeduction,
 			標準報酬月額等級: healthInsuranceStandardSalaryInfo.grade,
 			標準報酬月額: healthInsuranceStandardSalaryInfo.standardAmount,
-			健康保険料月額: socialInsurancePremiums.健康保険料,
-			介護保険料月額: socialInsurancePremiums.介護保険料,
-			厚生年金保険料月額: socialInsurancePremiums.厚生年金保険料,
-			社会保険料月額: socialInsurancePremiums.社会保険料,
-			社会保険料年額: socialInsurancePremiums.社会保険料 * 12,
+			健康保険料月額: socialInsurancePremiums.健康保険料月額,
+			介護保険料月額: socialInsurancePremiums.介護保険料月額,
+			厚生年金保険料月額: socialInsurancePremiums.厚生年金保険料月額,
+			社会保険料月額: socialInsurancePremiums.社会保険料月額,
+			社会保険料年額: socialInsurancePremiums.社会保険料月額 * 12,
 		};
 
 		years.push(yearData);
