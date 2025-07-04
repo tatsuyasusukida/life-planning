@@ -69,6 +69,15 @@ export function calculateHealthInsuranceStandardMonthlySalary(
 	grade: number;
 	standardAmount: number;
 } {
+	// 負の値は最低等級を適用
+	if (monthlySalary < 0) {
+		const firstGrade = HEALTH_INSURANCE_MONTHLY_SALARY_GRADES[0];
+		return {
+			grade: firstGrade.grade,
+			standardAmount: firstGrade.standardAmount,
+		};
+	}
+
 	for (const gradeInfo of HEALTH_INSURANCE_MONTHLY_SALARY_GRADES) {
 		if (monthlySalary >= gradeInfo.min && monthlySalary < gradeInfo.max) {
 			return {
@@ -98,6 +107,15 @@ export function calculatePensionStandardMonthlySalary(monthlySalary: number): {
 	grade: number;
 	standardAmount: number;
 } {
+	// 負の値は最低等級を適用
+	if (monthlySalary < 0) {
+		const firstGrade = PENSION_MONTHLY_SALARY_GRADES[0];
+		return {
+			grade: firstGrade.grade,
+			standardAmount: firstGrade.standardAmount,
+		};
+	}
+
 	for (const gradeInfo of PENSION_MONTHLY_SALARY_GRADES) {
 		if (monthlySalary >= gradeInfo.min && monthlySalary < gradeInfo.max) {
 			return {
@@ -130,6 +148,7 @@ interface SocialInsuranceRates {
  * @param healthInsuranceStandardSalary 健康保険用標準報酬月額
  * @param pensionStandardSalary 厚生年金保険用標準報酬月額
  * @param rates 保険料率
+ * @param age 年齢（介護保険料は40歳以上が対象）
  * @returns 各種保険料
  */
 function calculateSocialInsurancePremiums(
