@@ -4,6 +4,7 @@ import app, {
 	calculatePensionStandardMonthlySalary,
 	fillMissingSalaryInfo,
 	fillMissingSocialInsuranceInfo,
+	type SocialInsuranceRates,
 } from "./index";
 
 describe("fillMissingSalaryInfo", () => {
@@ -60,11 +61,6 @@ describe("fillMissingSalaryInfo", () => {
 
 describe("fillMissingSocialInsuranceInfo", () => {
 	it("省略された年度を前年度のデータで補完する", () => {
-		type SocialInsuranceRates = {
-			健康保険料率: number;
-			介護保険料率: number;
-			厚生年金保険料率: number;
-		};
 		const socialInsuranceMap = new Map<number, SocialInsuranceRates>();
 		socialInsuranceMap.set(2020, {
 			健康保険料率: 0.0981,
@@ -112,11 +108,6 @@ describe("fillMissingSocialInsuranceInfo", () => {
 	});
 
 	it("最初の年度に社会保険情報がない場合はデフォルト値（0）を設定", () => {
-		type SocialInsuranceRates = {
-			健康保険料率: number;
-			介護保険料率: number;
-			厚生年金保険料率: number;
-		};
 		const socialInsuranceMap = new Map<number, SocialInsuranceRates>();
 		socialInsuranceMap.set(2022, {
 			健康保険料率: 0.0981,
