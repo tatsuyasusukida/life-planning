@@ -63,7 +63,9 @@ export function fillMissingSalaryInfo(
  * @param monthlySalary 月額給与
  * @returns 標準報酬月額の等級と金額
  */
-function calculateHealthInsuranceStandardMonthlySalary(monthlySalary: number): {
+export function calculateHealthInsuranceStandardMonthlySalary(
+	monthlySalary: number,
+): {
 	grade: number;
 	standardAmount: number;
 } {
@@ -92,7 +94,7 @@ function calculateHealthInsuranceStandardMonthlySalary(monthlySalary: number): {
  * @param monthlySalary 月額給与
  * @returns 標準報酬月額の等級と金額
  */
-function calculatePensionStandardMonthlySalary(monthlySalary: number): {
+export function calculatePensionStandardMonthlySalary(monthlySalary: number): {
 	grade: number;
 	standardAmount: number;
 } {

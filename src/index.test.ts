@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import app, {
+	calculateHealthInsuranceStandardMonthlySalary,
+	calculatePensionStandardMonthlySalary,
 	fillMissingSalaryInfo,
 	fillMissingSocialInsuranceInfo,
 } from "./index";
@@ -755,6 +757,106 @@ describe("/api/v1/life-planning/simulation", () => {
 		// 月額約66.7万円 → 等級36（標準報酬月額68万円）
 		expect(data.年度一覧[2].標準報酬月額等級).toBe(36);
 		expect(data.年度一覧[2].標準報酬月額).toBe(680000);
+	});
+});
+
+describe("calculateHealthInsuranceStandardMonthlySalary", () => {
+	it("最低等級未満の給与の場合は等級1を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(30000);
+		expect(result.grade).toBe(1);
+		expect(result.standardAmount).toBe(58000);
+	});
+
+	it("等級1の範囲内の給与の場合は等級1を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(50000);
+		expect(result.grade).toBe(1);
+		expect(result.standardAmount).toBe(58000);
+	});
+
+	it("等級1の上限丁度の給与の場合は等級2を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(63000);
+		expect(result.grade).toBe(2);
+		expect(result.standardAmount).toBe(68000);
+	});
+
+	it("等級2の範囲内の給与の場合は等級2を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(68000);
+		expect(result.grade).toBe(2);
+		expect(result.standardAmount).toBe(68000);
+	});
+
+	it("等級2の上限丁度の給与の場合は等級3を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(73000);
+		expect(result.grade).toBe(3);
+		expect(result.standardAmount).toBe(78000);
+	});
+
+	it("中間等級の給与の場合は正しい等級を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(300000);
+		expect(result.grade).toBe(22);
+		expect(result.standardAmount).toBe(300000);
+	});
+
+	it("最高等級の範囲内の給与の場合は最高等級を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(1300000);
+		expect(result.grade).toBe(49);
+		expect(result.standardAmount).toBe(1330000);
+	});
+
+	it("最高等級を超える給与の場合は最高等級を返す", () => {
+		const result = calculateHealthInsuranceStandardMonthlySalary(2000000);
+		expect(result.grade).toBe(50);
+		expect(result.standardAmount).toBe(1390000);
+	});
+});
+
+describe("calculatePensionStandardMonthlySalary", () => {
+	it("最低等級未満の給与の場合は等級4を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(80000);
+		expect(result.grade).toBe(4);
+		expect(result.standardAmount).toBe(88000);
+	});
+
+	it("等級4の範囲内の給与の場合は等級4を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(90000);
+		expect(result.grade).toBe(4);
+		expect(result.standardAmount).toBe(88000);
+	});
+
+	it("等級4の上限丁度の給与の場合は等級5を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(93000);
+		expect(result.grade).toBe(5);
+		expect(result.standardAmount).toBe(98000);
+	});
+
+	it("等級5の範囲内の給与の場合は等級5を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(98000);
+		expect(result.grade).toBe(5);
+		expect(result.standardAmount).toBe(98000);
+	});
+
+	it("等級5の上限丁度の給与の場合は等級6を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(101000);
+		expect(result.grade).toBe(6);
+		expect(result.standardAmount).toBe(104000);
+	});
+
+	it("中間等級の給与の場合は正しい等級を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(300000);
+		expect(result.grade).toBe(22);
+		expect(result.standardAmount).toBe(300000);
+	});
+
+	it("最高等級の範囲内の給与の場合は最高等級を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(620000);
+		expect(result.grade).toBe(34);
+		expect(result.standardAmount).toBe(620000);
+	});
+
+	it("最高等級を超える給与の場合は最高等級を返す", () => {
+		const result = calculatePensionStandardMonthlySalary(1000000);
+		expect(result.grade).toBe(35);
+		expect(result.standardAmount).toBe(650000);
 	});
 });
 
