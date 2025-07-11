@@ -1,4 +1,4 @@
-import type { Context, ErrorHandler } from "hono";
+import type { ErrorHandler } from "hono";
 
 export const errorHandler: ErrorHandler = (err, c) => {
 	if (
@@ -13,7 +13,8 @@ export const errorHandler: ErrorHandler = (err, c) => {
 	return c.json({ エラー: "内部サーバーエラーが発生しました" }, 500);
 };
 
-export const validationErrorHandler = (result: any, c: Context) => {
+// biome-ignore lint/suspicious/noExplicitAny: Hook function signature required by zod-openapi
+export const validationErrorHandler = (result: any, c: any) => {
 	if (!result.success) {
 		const firstIssue = result.error.issues[0];
 

@@ -1,3 +1,4 @@
+import type { RouteHandler } from "@hono/zod-openapi";
 import { createRoute } from "@hono/zod-openapi";
 import type { z } from "zod";
 import { MAX_ALLOWED_AGE } from "../lib/constants/social-insurance";
@@ -60,7 +61,9 @@ export const lifePlanningRoute = createRoute({
 	},
 });
 
-export const lifePlanningHandler = async (c: any) => {
+export const lifePlanningHandler: RouteHandler<
+	typeof lifePlanningRoute
+> = async (c) => {
 	const body = c.req.valid("json") as LifePlanningRequest;
 
 	if (body.開始年 > body.終了年) {
