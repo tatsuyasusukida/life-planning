@@ -1,6 +1,15 @@
 import type { SocialInsuranceRates } from "../types";
 
 /**
+ * デフォルトの社会保険料率（保険料率0）
+ */
+const DEFAULT_SOCIAL_INSURANCE_RATES: SocialInsuranceRates = {
+	健康保険料率: 0,
+	介護保険料率: 0,
+	厚生年金保険料率: 0,
+};
+
+/**
  * 省略された年度の給与情報を前年度のデータで補完する
  * @param salaryInfoMap 年度別給与情報
  * @param startYear 開始年
@@ -26,6 +35,7 @@ export function fillMissingSalaryInfo(
 
 /**
  * 省略された年度の社会保険情報を前年度のデータで補完する
+ * 前年度のデータが利用できない場合、デフォルトの保険料率0を適用する
  * @param socialInsuranceMap 年度別社会保険情報
  * @param startYear 開始年
  * @param endYear 終了年
@@ -46,11 +56,7 @@ export function fillMissingSocialInsuranceInfo(
 			socialInsuranceMap.set(year, { ...lastValidRates });
 		} else {
 			// デフォルト値（保険料率0）を設定
-			socialInsuranceMap.set(year, {
-				健康保険料率: 0,
-				介護保険料率: 0,
-				厚生年金保険料率: 0,
-			});
+			socialInsuranceMap.set(year, { ...DEFAULT_SOCIAL_INSURANCE_RATES });
 		}
 	}
 }
