@@ -1,4 +1,5 @@
-import type { ErrorHandler } from "hono";
+import type { Context, ErrorHandler } from "hono";
+import type { SafeParseReturnType } from "zod";
 
 export const errorHandler: ErrorHandler = (err, c) => {
 	if (
@@ -13,8 +14,10 @@ export const errorHandler: ErrorHandler = (err, c) => {
 	return c.json({ エラー: "内部サーバーエラーが発生しました" }, 500);
 };
 
-// biome-ignore lint/suspicious/noExplicitAny: Hook function signature required by zod-openapi
-export const validationErrorHandler = (result: any, c: any) => {
+export const validationErrorHandler = (
+	result: SafeParseReturnType<unknown, unknown>,
+	c: Context,
+) => {
 	if (!result.success) {
 		const firstIssue = result.error.issues[0];
 
