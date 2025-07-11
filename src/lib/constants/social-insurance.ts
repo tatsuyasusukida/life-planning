@@ -92,3 +92,8 @@ export const PENSION_MONTHLY_SALARY_GRADES = [
 	{ grade: 34, min: 605000, max: 635000, standardAmount: 620000 },
 	{ grade: 35, min: 635000, max: Number.MAX_VALUE, standardAmount: 650000 },
 ];
+
+// 追加の定数
+export const MAX_ALLOWED_AGE = 150;
+export const MIN_YEAR = 1900;
+export const MAX_YEAR = 2100;
